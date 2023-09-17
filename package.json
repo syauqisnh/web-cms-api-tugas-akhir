@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Back End Web Builder Company Profile",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
