@@ -1,0 +1,10 @@
+GET http://localhost:9900/level/get_all
+
+
+###
+POST http://localhost:9900/level
+Content-Type: application/json
+
+{
+    "level_name": "Afif"
+}
