@@ -2,52 +2,57 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('tbl_testimonials', {
-      testimonial_id: {
+    await queryInterface.createTable('tbl_schedules', {
+      schedule_id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
-        type: Sequelize.INTEGER(50)
+        type: Sequelize.INTEGER(50),
       },
-      testimonial_uuid: {
+      schedule_uuid: {
         type: Sequelize.STRING
       },
-      testimonial_message: {
+      schedule_title: {
         type: Sequelize.STRING
       },
-      testimonial_name: {
+      schedule_status: {
+        type: Sequelize.ENUM('Y', 'N'),
+        defaultValue: 'N'
+      },
+      schedule_start: {
+        allowNull: true,
+        type: Sequelize.DATE
+      },
+      schedule_finish: {
+        allowNull: true,
+        type: Sequelize.DATE
+      },
+      schedule_address: {
         type: Sequelize.STRING
       },
-      testimonial_rating: {
-        type: Sequelize.INTEGER
-      },
-      testimonial_status: {
-        type: Sequelize.ENUM('true', 'false'),
-        defaultValue: 'false'
-      },
-      testimonial_business: {
+      schedule_business: {
         type: Sequelize.STRING
       },
-      testimonial_create_at: {
+      schedule_create_at: {
         allowNull: false,
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal("CURRENT_TIMESTAMP")
       },
-      testimonial_update_at: {
+      schedule_update_at: {
         allowNull: true,
         type: Sequelize.DATE
       },
-      testimonial_delete_at: {
+      schedule_delete_at: {
         allowNull: true,
         type: Sequelize.DATE
       },
-      testimonial_create_by: {
+      schedule_create_by: {
         type: Sequelize.STRING
       },
-      testimonial_update_by: {
+      schedule_update_by: {
         type: Sequelize.STRING
       },
-      testimonial_delete_by: {
+      schedule_delete_by: {
         type: Sequelize.STRING
       },
     }, {
@@ -55,6 +60,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('tbl_testimonials');
+    await queryInterface.dropTable('tbl_schedules');
   }
 };

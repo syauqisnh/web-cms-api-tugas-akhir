@@ -2,52 +2,45 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('tbl_testimonials', {
-      testimonial_id: {
+    await queryInterface.createTable('tbl_tnc', {
+      tnc_id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER(50)
       },
-      testimonial_uuid: {
+      tnc_uuid: {
         type: Sequelize.STRING
       },
-      testimonial_message: {
+      tnc_uuid_table: {
         type: Sequelize.STRING
       },
-      testimonial_name: {
+      tnc_name: {
         type: Sequelize.STRING
       },
-      testimonial_rating: {
-        type: Sequelize.INTEGER
-      },
-      testimonial_status: {
-        type: Sequelize.ENUM('true', 'false'),
-        defaultValue: 'false'
-      },
-      testimonial_business: {
+      tnc_business: {
         type: Sequelize.STRING
       },
-      testimonial_create_at: {
+      tnc_create_at: {
         allowNull: false,
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal("CURRENT_TIMESTAMP")
       },
-      testimonial_update_at: {
+      tnc_update_at: {
         allowNull: true,
         type: Sequelize.DATE
       },
-      testimonial_delete_at: {
+      tnc_delete_at: {
         allowNull: true,
         type: Sequelize.DATE
       },
-      testimonial_create_by: {
+      tnc_create_by: {
         type: Sequelize.STRING
       },
-      testimonial_update_by: {
+      tnc_update_by: {
         type: Sequelize.STRING
       },
-      testimonial_delete_by: {
+      tnc_delete_by: {
         type: Sequelize.STRING
       },
     }, {
@@ -55,6 +48,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('tbl_testimonials');
+    await queryInterface.dropTable('tbl_tnc');
   }
 };
