@@ -21,7 +21,10 @@ module.exports = (sequelize, DataTypes) => {
       },
       schedule_uuid: DataTypes.STRING,
       schedule_title: DataTypes.STRING,
-      schedule_status: DataTypes.ENUM,
+      schedule_status: {
+        type: DataTypes.ENUM('Y', 'N'),
+        defaultValue: 'N'
+      },
       schedule_start: DataTypes.DATE,
       schedule_finish: DataTypes.DATE,
       schedule_address: DataTypes.STRING,

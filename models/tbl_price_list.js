@@ -23,7 +23,10 @@ module.exports = (sequelize, DataTypes) => {
       price_list_name: DataTypes.STRING,
       price_list_price: DataTypes.STRING,
       price_list_desc: DataTypes.STRING,
-      price_list_status: DataTypes.ENUM,
+      price_list_status: {
+        type: DataTypes.ENUM('Y', 'N'),
+        defaultValue: 'N'
+      },
       price_list_order: DataTypes.STRING,
       price_list_business: DataTypes.STRING,
       price_list_media: DataTypes.STRING,

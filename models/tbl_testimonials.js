@@ -23,7 +23,10 @@ module.exports = (sequelize, DataTypes) => {
       testimonial_message: DataTypes.STRING,
       testimonial_name: DataTypes.STRING,
       testimonial_rating: DataTypes.INTEGER,
-      testimonial_status: DataTypes.STRING,
+      testimonial_status: {
+        type: DataTypes.ENUM('true', 'false'),
+        defaultValue: 'false',
+      },
       testimonial_business: DataTypes.STRING,
       testimonial_create_at: DataTypes.DATE,
       testimonial_update_at: DataTypes.DATE,
