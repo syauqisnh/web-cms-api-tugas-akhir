@@ -30,5 +30,5 @@ module.exports = (sequelize, DataTypes) => {
       paranoid: true,
     }
   );
-  return tbl_levels;
+  return tbl_levels;
 };

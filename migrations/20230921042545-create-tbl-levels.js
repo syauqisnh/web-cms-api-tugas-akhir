@@ -15,7 +15,6 @@ module.exports = {
       level_name: {
         type: Sequelize.STRING,
       },
-      // Ganti createdAt dan updatedAt dengan level_create_at dan level_update_at
       level_create_at: {
         allowNull: false,
         type: Sequelize.DATE,
@@ -39,11 +38,10 @@ module.exports = {
         type: Sequelize.STRING,
       },
     }, {
-      // Tambahkan opsi timestamps: false untuk menonaktifkan createdAt dan updatedAt
       timestamps: false,
     });
   },
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable("tbl_levels");
-  },
+  },
 };
