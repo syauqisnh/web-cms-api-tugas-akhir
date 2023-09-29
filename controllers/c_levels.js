@@ -170,7 +170,7 @@ const get_all_levels = async (req, res) => {
       limit = null,
       keyword = "",
       page = null,
-      order = { level_id: "desc" },
+      order = {level_id : "desc"},
       filter = {},
     } = req.query;
 
@@ -256,7 +256,7 @@ const get_all_levels = async (req, res) => {
 // Untuk mendapatkan Data yang uniqe
 const get_unique_levels = async (req, res) => {
   try {
-    const { field } = req.query;
+    const {field} = req.query;
 
     if (!field) {
       return res.status(400).json({
@@ -266,40 +266,41 @@ const get_unique_levels = async (req, res) => {
       });
     }
 
+    const fieldsArray = field.split(',');
+
     const tableAttributes = tbl_levels.rawAttributes;
 
-    if (!(field in tableAttributes)) {
-      return res.status(404).json({
+    const invalidFields = fieldsArray.filter((f) => !(f in tableAttributes));
+
+    if (invalidFields.length > 0) {
+      return res.status(200).json({
         success: false,
         message: 'Gagal mendapatkan data',
-        data: null,
+        data: null
+      })
+    };
+
+    const uniqueValues = {};
+
+    for (const f of fieldsArray) {
+      const values = await tbl_levels.findAll({
+        attributes: [[Sequelize.fn("DISTINCT", Sequelize.col(f)), f]],
+        where: {
+          level_delete_at: null,
+        },
       });
+      
+      if (values && values.length > 0) {
+        uniqueValues[f] = values.map((item) => item[f]);
+      }
     }
-
-    const uniqueValues = await tbl_levels.findAll({
-      attributes: [[Sequelize.fn("DISTINCT", Sequelize.col(field)), field]],
-      where: {
-        level_delete_at: null,
-      },
-    });
-
-    if (!uniqueValues || uniqueValues.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Gagal mendapatkan data',
-        data: null,
-      });
-    }
-
-    const values = uniqueValues.map((item) => item[field]);
 
     return res.status(200).json({
       success: true,
       message: 'Sukses mendapatkan data',
-      data: {
-        [field]: values,
-      },
+      data: uniqueValues,
     });
+
   } catch (error) {
     console.error(error, 'Data Error');
     res.status(500).json({
@@ -313,12 +314,12 @@ const get_unique_levels = async (req, res) => {
 // Untuk Mendapatkan Jumlah Data Pada Database
 const get_count_levels = async (req, res) => {
   try {
-    const { field } = req.query;
+    const {field} = req.query;
 
-    if (!field || typeof field !== "object") {
+    if (!field || typeof field !== 'object') {
       return res.status(400).json({
         success: false,
-        message: "Parameter field harus berupa objek",
+        message: 'Parameter field harus berupa objek',
         data: null,
       });
     }
@@ -329,7 +330,7 @@ const get_count_levels = async (req, res) => {
       if (field.hasOwnProperty(fieldName)) {
         const values = Array.isArray(field[fieldName])
           ? field[fieldName]
-          : field[fieldName].split(",").map((val) => val.trim()); 
+          : field[fieldName].split(',').map((val) => val.trim());
 
         const valueCounts = {}; 
 
@@ -337,40 +338,33 @@ const get_count_levels = async (req, res) => {
           const count = await tbl_levels.count({
             where: {
               [fieldName]: {
-                [Sequelize.Op.not]: null, 
-                [Sequelize.Op.eq]: value, 
+                [Sequelize.Op.not]: null,
+                [Sequelize.Op.eq]: value,
               },
             },
           });
-
           valueCounts[value] = count;
         }
 
-        const hasData = Object.values(valueCounts).some((count) => count > 0);
-
-        counts[fieldName] = hasData
-          ? Object.keys(valueCounts).map((value) => ({
-              value,
-              count: valueCounts[value],
-            }))
-          : null;
+        counts[fieldName] = Object.keys(valueCounts).map((value) => ({
+          value,
+          count: valueCounts[value],
+        }));
       }
     }
 
-    const hasData = Object.values(counts).some((data) => data !== null);
-
     const response = {
-      success: hasData, 
-      message: hasData ? "Sukses mendapatkan data" : "Gagal mendapatkan data",
-      data: hasData ? counts : null,
+      success: true,
+      message: 'Sukses mendapatkan data',
+      data: counts,
     };
 
     return res.status(200).json(response);
   } catch (error) {
-    console.error("Internal server error:", error);
+    console.error('Internal server error:', error);
     res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: 'Internal server error',
       data: null,
     });
   }
