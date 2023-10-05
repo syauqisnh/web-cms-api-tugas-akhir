@@ -48,11 +48,19 @@ const post_levels = async (req, res) => {
   }
 };
 
-// Untuk Edit Datanya
+// Untuk Edit Datanya (Perbaikan)
 const put_levels = async (req, res) => {
   try {
     const { level_uuid } = req.params;
     const { level_name } = req.body;
+
+    if (!level_name) {
+      return res.status(400).json({
+        success: false,
+        message: 'Data Harus Di Isi',
+        data: null
+      })
+    }
 
     const update_levels = await tbl_levels.findOne({
       where: { level_uuid },
@@ -163,21 +171,21 @@ const get_detail_level = async (req, res) => {
   }
 };
 
-// Untuk Menampilkan Seluruh Datanya
+// Untuk Menampilkan Seluruh Datanya(perbaikan)
 const get_all_levels = async (req, res) => {
   try {
     const {
       limit = null,
       keyword = "",
       page = null,
-      order = {level_id : "desc"},
+      order = { level_id: "desc" },
       filter = {},
     } = req.query;
 
     const offset = limit && page ? (page - 1) * limit : 0;
     const orderField = Object.keys(order)[0];
     const orderDirection =
-      order[orderField].toLowerCase() === "asc" ? "ASC" : "DESC";
+      order[orderField]?.toLowerCase() === "asc" ? "ASC" : "DESC";
 
     const whereClause = {
       level_delete_at: null,
@@ -189,14 +197,16 @@ const get_all_levels = async (req, res) => {
       };
     }
 
-    if (filter) {
-      for (const field in filter) {
-        if (Array.isArray(filter[field])) {
-          whereClause[field] = {
-            [Sequelize.Op.in]: filter[field],
-          };
-        }
-      }
+    if (filter.level_name && Array.isArray(filter.level_name) && filter.level_name.length > 0) {
+      whereClause.level_name = {
+        [Sequelize.Op.in]: filter.level_name,
+        [Sequelize.Op.not]: null,
+      };
+    } else if (filter.level_name && Array.isArray(filter.level_name) && filter.level_name.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Data Tidak Di Temukan'
+      });
     }
 
     const data = await tbl_levels.findAndCountAll({
@@ -206,11 +216,35 @@ const get_all_levels = async (req, res) => {
       offset: offset ? parseInt(offset) : null,
     });
 
+    const totalPages = limit ? Math.ceil(data.count / (limit || 1)) : 1;
+
+    const result = {
+      success: true,
+      message: "Sukses mendapatkan data",
+      data: filter.level_name
+        ? {
+            level_name: filter.level_name.split(",").filter(name => data.rows.some(row => row.level_name === name && row.level_delete_at === null)),
+          }
+        : data.rows.map((level) => ({
+            level_uuid: level.level_uuid,
+            level_name: level.level_name,
+          })),
+      pages: {
+        total: data.count,
+        per_page: limit || data.count,
+        next_page: limit && page ? (page < totalPages ? page + 1 : null) : null,
+        to: limit ? offset + data.rows.length : data.count,
+        last_page: totalPages,
+        current_page: page || 1,
+        from: offset,
+      },
+    };
+
     if (data.count === 0) {
-      return res.status(200).json({
-        success: true,
-        message: "Gagal mendapatkan data",
-        data: [],
+      return res.status(404).json({
+        success: false,
+        message: "Data Tidak Ditemukan",
+        data: null,
         pages: {
           total: 0,
           per_page: limit || 0,
@@ -223,28 +257,9 @@ const get_all_levels = async (req, res) => {
       });
     }
 
-    const totalPages = limit ? Math.ceil(data.count / limit) : 1;
-
-    const result = {
-      success: true,
-      message: "Sukses mendapatkan data",
-      data: data.rows.map((level) => ({
-        level_uuid: level.level_uuid,
-        level_name: level.level_name,
-      })),
-      pages: {
-        total: data.count,
-        per_page: limit || data.count,
-        next_page: limit && page ? (page < totalPages ? page + 1 : null) : null,
-        to: limit ? offset + data.rows.length : data.count,
-        last_page: totalPages,
-        current_page: page || 1,
-        from: offset,
-      },
-    };
     res.status(200).json(result);
   } catch (error) {
-    console.log(error, "Data Error");
+    console.error(error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -311,7 +326,7 @@ const get_unique_levels = async (req, res) => {
   }
 };
 
-// Untuk Mendapatkan Jumlah Data Pada Database
+// Untuk Mendapatkan Jumlah Data Pada Database (perbaikan)
 const get_count_levels = async (req, res) => {
   try {
     const {field} = req.query;
@@ -341,6 +356,7 @@ const get_count_levels = async (req, res) => {
                 [Sequelize.Op.not]: null,
                 [Sequelize.Op.eq]: value,
               },
+              level_delete_at: null
             },
           });
           valueCounts[value] = count;
