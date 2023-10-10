@@ -178,16 +178,15 @@ const get_all_levels = async (req, res) => {
       limit = null,
       keyword = "",
       page = null,
-      order = { level_id: "desc" },
+      order = { level_id: "desc" }, 
       filter = {},
     } = req.query;
 
     const offset = limit && page ? (page - 1) * limit : 0;
     const orderField = Object.keys(order)[0];
-    const orderDirection =
-      order[orderField]?.toLowerCase() === "asc" ? "ASC" : "DESC";
+    const orderDirection = order[orderField]?.toLowerCase() === "asc" ? "ASC" : "DESC";
 
-    const whereClause = {
+    const whereClause = { 
       level_delete_at: null,
     };
 
