@@ -1,7 +1,7 @@
 "use strict";
 const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
-  class tbl_module extends Model {
+  class tbl_modules extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
     }
   }
-  tbl_module.init(
+  tbl_modules.init(
     {
       module_id: {
         allowNull: false,
@@ -22,12 +22,18 @@ module.exports = (sequelize, DataTypes) => {
       module_uuid: DataTypes.STRING,
       module_name: DataTypes.STRING,
       module_desc: DataTypes.STRING,
+      module_create_at: DataTypes.DATE,
+      module_update_at: DataTypes.DATE,
+      module_delete_at: DataTypes.DATE,
+      module_create_by: DataTypes.STRING,
+      module_update_by: DataTypes.STRING,
+      module_delete_by: DataTypes.STRING,
     },
     {
       sequelize,
-      modelName: "tbl_module",
+      modelName: "tbl_modules",
       timestamps: false,
     }
   );
-  return tbl_module;
+  return tbl_modules;
 };

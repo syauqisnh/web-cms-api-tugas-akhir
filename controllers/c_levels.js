@@ -75,7 +75,6 @@ const put_levels = async (req, res) => {
     }
 
     update_levels.level_name = level_name;
-
     await update_levels.save();
 
     update_levels.level_update_at = new Date();
@@ -178,7 +177,7 @@ const get_all_levels = async (req, res) => {
       limit = null,
       keyword = "",
       page = null,
-      order = { level_id: "desc" }, 
+      order = { level_id: "desc" },
       filter = {},
     } = req.query;
 
@@ -186,26 +185,39 @@ const get_all_levels = async (req, res) => {
     const orderField = Object.keys(order)[0];
     const orderDirection = order[orderField]?.toLowerCase() === "asc" ? "ASC" : "DESC";
 
-    const whereClause = { 
+    const whereClause = {
       level_delete_at: null,
     };
 
-    if (keyword) {
-      whereClause.level_name = {
-        [Sequelize.Op.like]: `%${keyword}%`,
-      };
+    if (filter.level_name) {
+      const filterNames = Array.isArray(filter.level_name)
+        ? filter.level_name
+        : filter.level_name.split(',');
+
+      if (filterNames.length > 0) {
+        whereClause.level_name = {
+          [Sequelize.Op.or]: filterNames.map(name => ({
+            [Sequelize.Op.like]: `%${name.trim()}%`,
+          })),
+          [Sequelize.Op.not]: null,
+        };
+      } else {
+        console.log("Empty filter.level_name");
+        return res.status(404).json({
+          success: false,
+          message: 'Data Tidak Di Temukan'
+        });
+      }
     }
 
-    if (filter.level_name && Array.isArray(filter.level_name) && filter.level_name.length > 0) {
-      whereClause.level_name = {
-        [Sequelize.Op.in]: filter.level_name,
-        [Sequelize.Op.not]: null,
+    if (keyword) {
+      const keywordClause = {
+        [Sequelize.Op.like]: `%${keyword}%`,
       };
-    } else if (filter.level_name && Array.isArray(filter.level_name) && filter.level_name.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Data Tidak Di Temukan'
-      });
+
+      whereClause.level_name = whereClause.level_name
+        ? { [Sequelize.Op.and]: [whereClause.level_name, keywordClause] }
+        : keywordClause;
     }
 
     const data = await tbl_levels.findAndCountAll({
@@ -220,14 +232,10 @@ const get_all_levels = async (req, res) => {
     const result = {
       success: true,
       message: "Sukses mendapatkan data",
-      data: filter.level_name
-        ? {
-            level_name: filter.level_name.split(",").filter(name => data.rows.some(row => row.level_name === name && row.level_delete_at === null)),
-          }
-        : data.rows.map((level) => ({
-            level_uuid: level.level_uuid,
-            level_name: level.level_name,
-          })),
+      data: data.rows.map((level) => ({
+        level_uuid: level.level_uuid,
+        level_name: level.level_name,
+      })),
       pages: {
         total: data.count,
         per_page: limit || data.count,

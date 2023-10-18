@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    return queryInterface.bulkInsert("tbl_module", [
+    return queryInterface.bulkInsert("tbl_modules", [
       {
         module_uuid: "4a8e8612-2daf-4ccd-831b-b3d29945dbf8",
         module_name: "business",
@@ -68,6 +68,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    return queryInterface.bulkDelete("tbl_module", null, {});
+    return queryInterface.bulkDelete("tbl_modules", null, {});
   },
 };

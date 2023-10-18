@@ -22,6 +22,12 @@ module.exports = (sequelize, DataTypes) => {
       permission_uuid: DataTypes.STRING,
       permission_name: DataTypes.STRING,
       permission_desc: DataTypes.STRING,
+      permission_create_at: DataTypes.DATE,
+      permission_update_at: DataTypes.DATE,
+      permission_delete_at: DataTypes.DATE,
+      permission_create_by: DataTypes.STRING,
+      permission_update_by: DataTypes.STRING,
+      permission_delete_by: DataTypes.STRING,
     },
     {
       sequelize,

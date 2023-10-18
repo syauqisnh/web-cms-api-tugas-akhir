@@ -18,6 +18,28 @@ module.exports = {
       permission_desc: {
         type: Sequelize.STRING
       },
+      permission_create_at: {
+        allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+      },
+      permission_update_at: {
+        allowNull: true,
+        type: Sequelize.DATE
+      },
+      permission_delete_at: {
+        allowNull: true,
+        type: Sequelize.DATE
+      },
+      permission_create_by: {
+        type: Sequelize.STRING
+      },
+      permission_update_by: {
+        type: Sequelize.STRING
+      },
+      permission_delete_by: {
+        type: Sequelize.STRING
+      }
     }, {
       timestamps: false,
     });
