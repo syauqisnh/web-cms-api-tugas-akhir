@@ -144,7 +144,7 @@ const get_all_module = async (req, res) => {
             filter = {}
         } = req.query;
     
-        const offset = limit && order ? (page - 1) * limit : 0;
+        let offset = limit && order ? (page - 1) * limit : 0;
         const orderField = Object.keys(order)[0];
         const orderDirection = order[orderField]?.toLowerCase() === 'asc' ? 'ASC' : 'DESC'
     
@@ -177,6 +177,7 @@ const get_all_module = async (req, res) => {
             const keywordClause = {
                 [Sequelize.Op.like]: `%${keyword}%`,
             }
+            offset = 0;
     
             whereClause.module_name = whereClause.module_name
             ? { [Sequelize.Op.and]: [whereClause.module_name, keywordClause]}
@@ -225,6 +226,13 @@ const get_all_module = async (req, res) => {
                 from: 0,
               },
             });
+          }
+
+          const currentUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+          const excludePagesUrl = "http://localhost:9900/api/v1/module/get_all";
+
+          if (currentUrl === excludePagesUrl) {
+            delete result.pages
           }
 
           res.status(200).json(result);
