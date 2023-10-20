@@ -181,7 +181,7 @@ const get_all_levels = async (req, res) => {
       filter = {},
     } = req.query;
 
-    const offset = limit && page ? (page - 1) * limit : 0;
+    let offset = limit && page ? (page - 1) * limit : 0;
     const orderField = Object.keys(order)[0];
     const orderDirection = order[orderField]?.toLowerCase() === "asc" ? "ASC" : "DESC";
 
@@ -214,6 +214,7 @@ const get_all_levels = async (req, res) => {
       const keywordClause = {
         [Sequelize.Op.like]: `%${keyword}%`,
       };
+      offset = 0; 
 
       whereClause.level_name = whereClause.level_name
         ? { [Sequelize.Op.and]: [whereClause.level_name, keywordClause] }
@@ -262,6 +263,13 @@ const get_all_levels = async (req, res) => {
           from: 0,
         },
       });
+    }
+
+    const currentUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+    const excludePagesUrl = "http://localhost:9900/api/v1/level/get_all";
+
+    if (currentUrl === excludePagesUrl) {
+      delete result.pages
     }
 
     res.status(200).json(result);
