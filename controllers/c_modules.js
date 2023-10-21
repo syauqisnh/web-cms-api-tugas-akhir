@@ -252,7 +252,8 @@ const get_detail_module = async (req, res) => {
 
         const detail_module = await tbl_modules.findOne({
             where: {
-                module_uuid
+                module_uuid,
+                module_delete_at: null
             }
         })
     

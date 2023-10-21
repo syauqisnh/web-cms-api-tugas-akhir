@@ -244,7 +244,10 @@ const get_detail_permissions = async (req, res) => {
         const {permission_uuid} = req.params;
 
         const detail_permissions = await tbl_permissions.findOne({
-            where: {permission_uuid}
+            where: {
+                permission_uuid,
+                permission_delete_at: null
+            }
         })
 
         if (!detail_permissions) {

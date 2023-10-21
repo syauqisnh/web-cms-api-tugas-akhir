@@ -139,7 +139,10 @@ const get_detail_level = async (req, res) => {
     const { level_uuid } = req.params;
 
     const detail_level = await tbl_levels.findOne({
-      where: { level_uuid },
+      where: { 
+        level_uuid,
+        level_delete_at: null, 
+      },
     });
 
     if (!detail_level) {
