@@ -33,7 +33,9 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "tbl_access",
+      tableName: "tbl_access",
       timestamps: false,
+      paranoid: true,
     }
   );
   return tbl_access;

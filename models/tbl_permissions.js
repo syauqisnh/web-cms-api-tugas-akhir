@@ -33,6 +33,7 @@ module.exports = (sequelize, DataTypes) => {
       sequelize,
       modelName: "tbl_permissions",
       timestamps: false,
+      paranoid: true,
     }
   );
   return tbl_permissions;

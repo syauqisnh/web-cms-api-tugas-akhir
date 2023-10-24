@@ -33,6 +33,7 @@ module.exports = (sequelize, DataTypes) => {
       sequelize,
       modelName: "tbl_modules",
       timestamps: false,
+      paranoid: true,
     }
   );
   return tbl_modules;
