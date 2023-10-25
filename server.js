@@ -1,5 +1,5 @@
 const express = require('express');
-const route = require('./routes/index');
+const route = require('./routes/route');
 const cors = require('cors'); // Import middleware cors
 const app = express();
 

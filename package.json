@@ -2,9 +2,9 @@
   "name": "webprofile_builder_api",
   "version": "1.0.0",
   "description": "Back End Web Builder Company Profile",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "dev": "nodemon index.js",
+    "dev": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
