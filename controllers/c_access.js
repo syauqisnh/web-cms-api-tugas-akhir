@@ -18,6 +18,18 @@ const post_access = async (req, res) => {
       });
     }
 
+    const modulValid = await tbl_modules.findOne({ where: { module_uuid: access_modul } });
+    const permissionValid = await tbl_permissions.findOne({ where: { permission_uuid: access_permission } });
+    const levelValid = await tbl_levels.findOne({ where: { level_uuid: access_level } });
+
+    if (!modulValid || !permissionValid || !levelValid) {
+      return res.status(400).json({
+        success: false,
+        message: "UUID tidak terdapat di tabel referensi",
+        data: null,
+      });
+    }
+
     const access_uuid = uuidv4();
 
     const new_access = await tbl_access.create({
@@ -54,6 +66,7 @@ const post_access = async (req, res) => {
     });
   }
 };
+
 
 const put_access = async (req, res) => {
   try {
@@ -146,88 +159,146 @@ const delete_access = async (req, res) => {
 };
 
 const get_all_access = async (req, res) => {
-    try {
-      const { limit = null, page = null, keyword = '', order = { access_id: 'desc' }, filter = {} } = req.query;
-  
-      let offset = limit && page ? (page - 1) * limit : 0;
-      const orderField = Object.keys(order)[0];
-      const orderDirection = order[orderField]?.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
-  
-      const whereClause = {
-        access_delete_at: null,
-      };
-  
-      if (filter.access_modul && filter.access_permission && filter.access_level) {
-        whereClause.access_modul = Array.isArray(filter.access_modul) ? filter.access_modul : filter.access_modul.split(',');
-        whereClause.access_permission = Array.isArray(filter.access_permission) ? filter.access_permission : filter.access_permission.split(',');
-        whereClause.access_level = Array.isArray(filter.access_level) ? filter.access_level : filter.access_level.split(',');
-      }
-  
-      const { count, rows } = await tbl_access.findAndCountAll({
-        where: whereClause,
-        order: [[orderField, orderDirection]],
-        limit: limit ? parseInt(limit) : null,
-        offset: offset,
-        include: [
-          {
-            model: tbl_levels,
-            as: 'access_level_association',
-            attributes: ['level_uuid', 'level_name'],
-          },
-          {
-            model: tbl_modules,
-            as: "access_modul_association",
-            attributes: ['modul_uuid', 'modul_name'],
-          },
-          {
-            model: tbl_permissions,
-            as: 'access_permission_association',
-            attributes: ['permission_uuid', 'permission_name'],
-          },
-        ],
-      });
-  
-      const totalPages = Math.ceil(count / limit);
-      const hasNextPage = page < totalPages;
-  
-      res.status(200).json({
-        success: true,
-        message: 'Sukses mendapatkan data',
-        data: rows.map((row) => ({
-          access_uuid: row.access_uuid,
-          access_level: {
-            level_uuid: row.access_level.level_uuid,
-            level_name: row.access_level.level_name,
-          },
-          access_modul: {
-            modul_uuid: row.access_modul.modul_uuid,
-            modul_name: row.access_modul.modul_name,
-          },
-          access_permission: {
-            permission_uuid: row.access_permission.permission_uuid,
-            permission_name: row.access_permission.permission_name,
-          },
-        })),
-        pages: {
-          total: totalPages,
-          per_page: limit ? parseInt(limit) : count,
-          next_page: hasNextPage ? parseInt(page) + 1 : null,
-          to: offset + rows.length,
-          last_page: totalPages,
-          current_page: parseInt(page),
-          from: offset,
-        },
-      });
-    } catch (error) {
-      console.error(error, 'System Error');
-      res.status(500).json({
-        success: false,
-        message: 'Internal Server Error',
-        data: null,
-      });
+  try {
+    const { 
+      limit = null, 
+      page = null, 
+      keyword = '', 
+      order = { access_id: 'desc' }, 
+      filter = {} 
+    } = req.query;
+
+    let offset = limit && page ? (page - 1) * limit : 0;
+    const orderField = Object.keys(order)[0];
+    const orderDirection = order[orderField]?.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
+    const whereClause = {
+      access_delete_at: null,
+    };
+
+    if (filter.access_modul && filter.access_permission && filter.access_level) {
+      whereClause.access_modul = Array.isArray(filter.access_modul) 
+      ? filter.access_modul 
+      : filter.access_modul.split(',');
+      whereClause.access_permission = Array.isArray(filter.access_permission) 
+      ? filter.access_permission 
+      : filter.access_permission.split(',');
+      whereClause.access_level = Array.isArray(filter.access_level) 
+      ? filter.access_level 
+      : filter.access_level.split(',');
     }
-  };
-  
+
+    if (keyword) {
+      const keywordClause = {
+        [Sequelize.Op.or]: [
+          Sequelize.literal('`access_modul_as`.`module_name` LIKE :keyword'), 
+          // Tambahkan kondisi pencarian berdasarkan permission atau level jika diperlukan
+          // { '$access_permission_as.permission_name$': { [Sequelize.Op.like]: `%${keyword}%` } },
+          // { '$access_level_as.level_name$': { [Sequelize.Op.like]: `%${keyword}%` } },
+        ],
+      };
+      offset = 0;
+
+      whereClause.access_modul = whereClause.access_modul
+      ? { [Sequelize.Op.and]: [whereClause.access_modul, keywordClause] }
+      :keywordClause;
+    }
+
+    const { count, rows } = await tbl_access.findAndCountAll({
+      where: whereClause,
+      order: [[orderField, orderDirection]],
+      limit: limit ? parseInt(limit) : null,
+      offset: offset,
+      include: [
+        {
+          model: tbl_modules,
+          as: 'access_modul_as',
+          attributes: ['module_uuid', 'module_name'],
+        },
+        {
+          model: tbl_permissions,
+          as: 'access_permission_as',
+          attributes: ['permission_uuid', 'permission_name'],
+        },
+        {
+          model: tbl_levels,
+          as: 'access_level_as',
+          attributes: ['level_uuid', 'level_name'],
+        },
+      ],     
+      replacements: {
+        keyword: `%${keyword}%`,
+      },
+    });
+
+    const uniqueData = new Set();
+
+    const uniqueRows = rows.filter((row) => {
+      const key = `${row.access_uuid}-${row.access_modul_as.module_uuid}-${row.access_permission_as.permission_uuid}-${row.access_level_as.level_uuid}`;
+      if (uniqueData.has(key)) {
+        return false;
+      }
+      uniqueData.add(key);
+      return true;
+    });
+
+    console.log('Access Data:', uniqueRows);
+
+    const totalPages = Math.ceil(count / limit);
+    const hasNextPage = page < totalPages;
+
+    const result = {
+      success: true,
+      message: 'Sukses mendapatkan data',
+      data: uniqueRows.map((row) => ({
+        access_uuid: row.access_uuid,
+        access_modul: row.access_modul_as
+          ? {
+            modul_uuid: row.access_modul_as.module_uuid,
+            modul_name: row.access_modul_as.module_name,
+          }
+          : null,
+        access_permission: row.access_permission_as
+          ? {
+            permission_uuid: row.access_permission_as.permission_uuid,
+            permission_name: row.access_permission_as.permission_name,
+          }
+          : null,
+        access_level: row.access_level_as
+          ? {
+            level_uuid: row.access_level_as.level_uuid,
+            level_name: row.access_level_as.level_name,
+          }
+          : null,
+      })),
+      pages: {
+        total: totalPages,
+        per_page: limit ? parseInt(limit) : count,
+        next_page: limit && page ? (page < totalPages ? page + 1 : null) : null,
+        to: offset + uniqueRows.length,
+        last_page: totalPages,
+        current_page: parseInt(page),
+        from: offset,
+      },
+    }
+
+    const currentUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+    const excludePagesUrl = "http://localhost:9900/api/v1/access/get_all";
+
+    if (currentUrl === excludePagesUrl) {
+      delete result.pages
+    }
+
+    res.status(200).json(result)
+  } catch (error) {
+    console.error(error, 'System Error');
+    res.status(500).json({
+      success: false,
+      message: 'Internal Server Error',
+      data: null,
+    });
+  }
+};
 
 const get_detail_access = async (req, res) => {
     try {
@@ -269,10 +340,142 @@ const get_detail_access = async (req, res) => {
         });
     }
 }
+
+const get_unique_access = async (req, res) => {
+  try {
+    const { field } = req.query;
+
+    if (!field) {
+      return res.status(400).json({
+        success: false,
+        message: 'Parameter "Field" diperlukan',
+        data: null
+      });
+    }
+
+    const fieldsArray = field.split(',');
+
+    const tableAttributes = tbl_access.rawAttributes;
+
+    const invalidFields = fieldsArray.filter((f) => !(f in tableAttributes));
+
+    if (invalidFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Parameter tidak valid: ' + invalidFields.join(', '),
+        data: null
+      });
+    }
+
+    const uniqueValues = {};
+
+    for (const f of fieldsArray) {
+      const values = await tbl_access.findAll({
+        attributes: [
+          [Sequelize.literal(`DISTINCT \`${tbl_access.rawAttributes[f].field}\``), f]
+        ],
+        where: {
+          access_delete_at: null,
+        },
+      });
+
+      if (values && values.length > 0) {
+        uniqueValues[f] = values.map((item) => item.get(f));
+      } else {
+        uniqueValues[f] = [];
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Sukses mendapatkan data',
+      data: uniqueValues
+    });
+
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal Server Error',
+      data: null
+    });
+  }
+};
+
+const get_count_access = async (req, res) => {
+  try {
+    const { field } = req.query;
+
+    if (!field || !Array.isArray(field)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Parameter field harus berupa array',
+        data: null,
+      });
+    }
+
+    const counts = {};
+
+    for (const fieldObject of field) {
+      const fieldName = Object.keys(fieldObject)[0];
+      const values = Array.isArray(fieldObject[fieldName])
+        ? fieldObject[fieldName]
+        : [fieldObject[fieldName]];
+
+      if (!tbl_access.rawAttributes[fieldName]) {
+        return res.status(404).json({
+          success: false,
+          message: 'Nama kolom tidak valid',
+          data: null,
+        });
+      }
+
+      const valueCounts = {};
+
+      for (const value of values) {
+        const count = await tbl_access.count({
+          where: {
+            [fieldName]: {
+              [Sequelize.Op.not]: null,
+              [Sequelize.Op.eq]: value,
+            },
+            access_delete_at: null,
+          },
+        });
+
+        valueCounts[value] = count;
+      }
+
+      counts[fieldName] = Object.keys(valueCounts).map((value) => ({
+        value,
+        count: valueCounts[value],
+      }));
+    }
+
+    const response = {
+      success: true,
+      message: 'Sukses mendapatkan data',
+      data: counts,
+    };
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Internal server error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      data: null,
+    });
+  }
+};
+
+
 module.exports = {
   post_access,
   put_access,
   delete_access,
   get_all_access,
   get_detail_access,
+  get_count_access,
+  get_unique_access,
 };
