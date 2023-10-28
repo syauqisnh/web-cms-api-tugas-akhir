@@ -67,7 +67,6 @@ const post_access = async (req, res) => {
   }
 };
 
-
 const put_access = async (req, res) => {
   try {
     const { access_uuid } = req.params;
@@ -85,6 +84,14 @@ const put_access = async (req, res) => {
       where: { access_uuid },
     });
 
+    if (!new_update) {
+      return res.status(404).json({
+        success: false,
+        message: "Gagal mengedit data",
+        data: null,
+      });
+    }
+
     new_update.access_modul = access_modul;
     await new_update.save();
 
@@ -96,14 +103,6 @@ const put_access = async (req, res) => {
 
     new_update.access_update_at = new Date();
     await new_update.save();
-
-    if (!new_update) {
-      return res.status(404).json({
-        success: false,
-        message: "Gagal mengedit data",
-        data: null,
-      });
-    }
 
     res.status(200).json({
       success: true,
@@ -162,7 +161,7 @@ const get_all_access = async (req, res) => {
   try {
     const { 
       limit = null, 
-      page = null, 
+      page = null,
       keyword = '', 
       order = { access_id: 'desc' }, 
       filter = {} 
