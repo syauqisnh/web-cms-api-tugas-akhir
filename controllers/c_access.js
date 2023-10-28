@@ -300,45 +300,78 @@ const get_all_access = async (req, res) => {
 };
 
 const get_detail_access = async (req, res) => {
-    try {
-        const { access_uuid } = req.params
+  try {
+      const { access_uuid } = req.params
 
-        const detail_access = await tbl_access.findOne({
-            where: {
-                access_uuid,
-                access_delete_at: null
+      const detail_access = await tbl_access.findOne({
+          where: {
+              access_uuid,
+              access_delete_at: null
+          },
+          include: [
+            {
+              model: tbl_modules,
+              as: 'access_modul_as',
+              attributes: ['module_uuid', 'module_name'],
+            },
+            {
+              model: tbl_permissions,
+              as: 'access_permission_as',
+              attributes: ['permission_uuid', 'permission_name'],
+            },
+            {
+              model: tbl_levels,
+              as: 'access_level_as',
+              attributes: ['level_uuid', 'level_name'],
             }
-        })
-    
-        if (!detail_access) {
-            return res.status(404).json({
-                success: false,
-                message: 'Gagal mendapatkan data',
-                data: null
-            })
-        }
-    
-        const result = {
-            success: true,
-            message: 'Berhasil mendapatkan data',
-            data: {
-                access_uuid: detail_access.access_uuid,
-                access_modul: detail_access.access_modul,
-                access_permission: detail_access.access_permission,
-                access_level: detail_access.access_level,
-            }
-        }
-    
-        res.status(200).json(result)
-    } catch (error) {
-        console.log(error, "System Error");
-        res.status(500).json({
-          success: false,
-          message: "Internal server error",
-          data: null,
-        });
-    }
+          ]
+      })
+  
+      if (!detail_access) {
+          return res.status(404).json({
+              success: false,
+              message: 'Gagal mendapatkan data',
+              data: null
+          })
+      }
+  
+      const result = {
+          success: true,
+          message: 'Berhasil mendapatkan data',
+          data: {
+            access_uuid: detail_access.access_uuid,
+            access_modul: detail_access.access_modul_as
+              ? {
+                modul_uuid: detail_access.access_modul_as.module_uuid,
+                modul_name: detail_access.access_modul_as.module_name,
+              }
+              : null,
+            access_permission: detail_access.access_permission_as
+              ? {
+                permission_uuid: detail_access.access_permission_as.permission_uuid,
+                permission_name: detail_access.access_permission_as.permission_name,
+              }
+              : null,
+            access_level: detail_access.access_level_as
+              ? {
+                level_uuid: detail_access.access_level_as.level_uuid,
+                level_name: detail_access.access_level_as.level_name,
+              }
+              : null,
+          },
+      }
+  
+      res.status(200).json(result)
+  } catch (error) {
+      console.log(error, "System Error");
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+        data: null,
+      });
+  }
 }
+
 
 const get_unique_access = async (req, res) => {
   try {
