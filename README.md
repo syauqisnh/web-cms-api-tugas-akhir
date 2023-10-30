@@ -5,6 +5,13 @@
 ```sh
 npm install
 ```
+
+### Create db
+
+```sh
+npx sequelize-cli db:create
+```
+
 ### Migrasi Database
 
 ```sh
