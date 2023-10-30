@@ -18,9 +18,15 @@ const post_access = async (req, res) => {
       });
     }
 
-    const modulValid = await tbl_modules.findOne({ where: { module_uuid: access_modul } });
-    const permissionValid = await tbl_permissions.findOne({ where: { permission_uuid: access_permission } });
-    const levelValid = await tbl_levels.findOne({ where: { level_uuid: access_level } });
+    const modulValid = await tbl_modules.findOne({
+      where: { module_uuid: access_modul },
+    });
+    const permissionValid = await tbl_permissions.findOne({
+      where: { permission_uuid: access_permission },
+    });
+    const levelValid = await tbl_levels.findOne({
+      where: { level_uuid: access_level },
+    });
 
     if (!modulValid || !permissionValid || !levelValid) {
       return res.status(400).json({
@@ -148,23 +154,23 @@ const delete_access = async (req, res) => {
       message: "Sukses menghapus data",
     });
   } catch (error) {
-    console.error(error, 'System Error')
+    console.error(error, "System Error");
     res.status(500).json({
-        success: false,
-        message: 'Internal Server Error',
-        data: null
-    })
+      success: false,
+      message: "Internal Server Error",
+      data: null,
+    });
   }
 };
 
 const get_all_access = async (req, res) => {
   try {
-    const { 
+    const {
       limit = null,
       page = null,
-      keyword = '', 
-      order = { access_id: 'desc' },  // Default order
-      filter = {} 
+      keyword = "",
+      order = { access_id: "desc" }, // Default order
+      filter = {},
     } = req.query;
 
     let offset = limit && page ? (page - 1) * limit : 0;
@@ -174,9 +180,10 @@ const get_all_access = async (req, res) => {
     // Periksa apakah kolom yang diizinkan
     const isValidOrderField = validOrderFields.includes(orderField);
 
-    const orderDirection = isValidOrderField && orderField !== 'access_id' 
-      ? 'ASC'  // Set arah pengurutan ke ASC untuk semua kolom selain access_id
-      : 'DESC';
+    const orderDirection =
+      isValidOrderField && orderField !== "access_id"
+        ? "ASC" // Set arah pengurutan ke ASC untuk semua kolom selain access_id
+        : "DESC";
 
     const whereClause = {
       access_delete_at: null,
@@ -186,13 +193,13 @@ const get_all_access = async (req, res) => {
     Object.keys(filter).forEach((field) => {
       whereClause[field] = Array.isArray(filter[field])
         ? filter[field]
-        : filter[field].split(',');
+        : filter[field].split(",");
     });
 
     if (keyword) {
       const keywordClause = {
         [Sequelize.Op.or]: [
-          Sequelize.literal('`access_modul_as`.`module_name` LIKE :keyword'), 
+          Sequelize.literal("`access_modul_as`.`module_name` LIKE :keyword"),
         ],
       };
       offset = 0;
@@ -203,31 +210,33 @@ const get_all_access = async (req, res) => {
     }
 
     // Menggunakan order dari parameter URL jika valid, jika tidak, menggunakan default order
-    const orderQuery = isValidOrderField ? [[orderField, orderDirection]] : [['access_uuid', 'DESC']];
+    const orderQuery = isValidOrderField
+      ? [[orderField, orderDirection]]
+      : [["access_uuid", "DESC"]];
 
     // Query data menggunakan Sequelize
     const { count, rows } = await tbl_access.findAndCountAll({
       where: whereClause,
-      order: orderQuery,
+      order: isValidOrderField ? [[orderField, orderDirection]] : undefined,
       limit: limit ? parseInt(limit) : null,
       offset: offset,
       include: [
         {
           model: tbl_modules,
-          as: 'access_modul_as',
-          attributes: ['module_uuid', 'module_name'],
+          as: "access_modul_as",
+          attributes: ["module_uuid", "module_name"],
         },
         {
           model: tbl_permissions,
-          as: 'access_permission_as',
-          attributes: ['permission_uuid', 'permission_name'],
+          as: "access_permission_as",
+          attributes: ["permission_uuid", "permission_name"],
         },
         {
           model: tbl_levels,
-          as: 'access_level_as',
-          attributes: ['level_uuid', 'level_name'],
+          as: "access_level_as",
+          attributes: ["level_uuid", "level_name"],
         },
-      ],     
+      ],
       replacements: {
         keyword: `%${keyword}%`,
       },
@@ -244,33 +253,33 @@ const get_all_access = async (req, res) => {
       return true;
     });
 
-    console.log('Data Akses:', uniqueRows);
+    console.log("Data Akses:", uniqueRows);
 
     const totalPages = Math.ceil(count / limit);
     const hasNextPage = page < totalPages;
 
     const result = {
       success: true,
-      message: 'Sukses mendapatkan data',
+      message: "Sukses mendapatkan data",
       data: uniqueRows.map((row) => ({
         access_uuid: row.access_uuid,
         access_modul: row.access_modul_as
           ? {
-            modul_uuid: row.access_modul_as.module_uuid,
-            modul_name: row.access_modul_as.module_name,
-          }
+              modul_uuid: row.access_modul_as.module_uuid,
+              modul_name: row.access_modul_as.module_name,
+            }
           : null,
         access_permission: row.access_permission_as
           ? {
-            permission_uuid: row.access_permission_as.permission_uuid,
-            permission_name: row.access_permission_as.permission_name,
-          }
+              permission_uuid: row.access_permission_as.permission_uuid,
+              permission_name: row.access_permission_as.permission_name,
+            }
           : null,
         access_level: row.access_level_as
           ? {
-            level_uuid: row.access_level_as.level_uuid,
-            level_name: row.access_level_as.level_name,
-          }
+              level_uuid: row.access_level_as.level_uuid,
+              level_name: row.access_level_as.level_name,
+            }
           : null,
       })),
       pages: {
@@ -282,99 +291,100 @@ const get_all_access = async (req, res) => {
         current_page: parseInt(page),
         from: offset,
       },
-    }
+    };
 
-    const currentUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+    const currentUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
     const excludePagesUrl = "http://localhost:9900/api/v1/access/get_all";
 
     if (currentUrl === excludePagesUrl) {
-      delete result.pages
+      delete result.pages;
     }
 
-    res.status(200).json(result)
+    res.status(200).json(result);
   } catch (error) {
-    console.error(error, 'Kesalahan Sistem');
+    console.error(error, "Kesalahan Sistem");
     res.status(500).json({
       success: false,
-      message: 'Kesalahan Internal Server',
+      message: "Kesalahan Internal Server",
       data: null,
     });
   }
 };
 
-
 const get_detail_access = async (req, res) => {
-    try {
-        const { access_uuid } = req.params
+  try {
+    const { access_uuid } = req.params;
 
-        const detail_access = await tbl_access.findOne({
-            where: {
-                access_uuid,
-                access_delete_at: null
-            },
-            include: [
-              {
-                model: tbl_modules,
-                as: 'access_modul_as',
-                attributes: ['module_uuid', 'module_name'],
-              },
-              {
-                model: tbl_permissions,
-                as: 'access_permission_as',
-                attributes: ['permission_uuid', 'permission_name'],
-              },
-              {
-                model: tbl_levels,
-                as: 'access_level_as',
-                attributes: ['level_uuid', 'level_name'],
-              }
-            ]
-        })
-    
-        if (!detail_access) {
-            return res.status(404).json({
-                success: false,
-                message: 'Gagal mendapatkan data',
-                data: null
-            })
-        }
-    
-        const result = {
-            success: true,
-            message: 'Berhasil mendapatkan data',
-            data: {
-              access_uuid: detail_access.access_uuid,
-              access_modul: detail_access.access_modul_as
-                ? {
-                  modul_uuid: detail_access.access_modul_as.module_uuid,
-                  modul_name: detail_access.access_modul_as.module_name,
-                }
-                : null,
-              access_permission: detail_access.access_permission_as
-                ? {
-                  permission_uuid: detail_access.access_permission_as.permission_uuid,
-                  permission_name: detail_access.access_permission_as.permission_name,
-                }
-                : null,
-              access_level: detail_access.access_level_as
-                ? {
-                  level_uuid: detail_access.access_level_as.level_uuid,
-                  level_name: detail_access.access_level_as.level_name,
-                }
-                : null,
-            },
-        }
-    
-        res.status(200).json(result)
-    } catch (error) {
-        console.log(error, "System Error");
-        res.status(500).json({
-          success: false,
-          message: "Internal server error",
-          data: null,
-        });
+    const detail_access = await tbl_access.findOne({
+      where: {
+        access_uuid,
+        access_delete_at: null,
+      },
+      include: [
+        {
+          model: tbl_modules,
+          as: "access_modul_as",
+          attributes: ["module_uuid", "module_name"],
+        },
+        {
+          model: tbl_permissions,
+          as: "access_permission_as",
+          attributes: ["permission_uuid", "permission_name"],
+        },
+        {
+          model: tbl_levels,
+          as: "access_level_as",
+          attributes: ["level_uuid", "level_name"],
+        },
+      ],
+    });
+
+    if (!detail_access) {
+      return res.status(404).json({
+        success: false,
+        message: "Gagal mendapatkan data",
+        data: null,
+      });
     }
-}
+
+    const result = {
+      success: true,
+      message: "Berhasil mendapatkan data",
+      data: {
+        access_uuid: detail_access.access_uuid,
+        access_modul: detail_access.access_modul_as
+          ? {
+              modul_uuid: detail_access.access_modul_as.module_uuid,
+              modul_name: detail_access.access_modul_as.module_name,
+            }
+          : null,
+        access_permission: detail_access.access_permission_as
+          ? {
+              permission_uuid:
+                detail_access.access_permission_as.permission_uuid,
+              permission_name:
+                detail_access.access_permission_as.permission_name,
+            }
+          : null,
+        access_level: detail_access.access_level_as
+          ? {
+              level_uuid: detail_access.access_level_as.level_uuid,
+              level_name: detail_access.access_level_as.level_name,
+            }
+          : null,
+      },
+    };
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error, "System Error");
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      data: null,
+    });
+  }
+};
 
 const get_unique_access = async (req, res) => {
   try {
@@ -384,11 +394,11 @@ const get_unique_access = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Parameter "Field" diperlukan',
-        data: null
+        data: null,
       });
     }
 
-    const fieldsArray = field.split(',');
+    const fieldsArray = field.split(",");
 
     const tableAttributes = tbl_access.rawAttributes;
 
@@ -397,8 +407,8 @@ const get_unique_access = async (req, res) => {
     if (invalidFields.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'Parameter tidak valid: ' + invalidFields.join(', '),
-        data: null
+        message: "Parameter tidak valid: " + invalidFields.join(", "),
+        data: null,
       });
     }
 
@@ -407,7 +417,12 @@ const get_unique_access = async (req, res) => {
     for (const f of fieldsArray) {
       const values = await tbl_access.findAll({
         attributes: [
-          [Sequelize.literal(`DISTINCT \`${tbl_access.rawAttributes[f].field}\``), f]
+          [
+            Sequelize.literal(
+              `DISTINCT \`${tbl_access.rawAttributes[f].field}\``
+            ),
+            f,
+          ],
         ],
         where: {
           access_delete_at: null,
@@ -423,16 +438,15 @@ const get_unique_access = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Sukses mendapatkan data',
-      data: uniqueValues
+      message: "Sukses mendapatkan data",
+      data: uniqueValues,
     });
-
   } catch (error) {
-    console.error('Error:', error);
+    console.error("Error:", error);
     return res.status(500).json({
       success: false,
-      message: 'Internal Server Error',
-      data: null
+      message: "Internal Server Error",
+      data: null,
     });
   }
 };
@@ -444,7 +458,7 @@ const get_count_access = async (req, res) => {
     if (!field || !Array.isArray(field)) {
       return res.status(400).json({
         success: false,
-        message: 'Parameter field harus berupa array',
+        message: "Parameter field harus berupa array",
         data: null,
       });
     }
@@ -460,7 +474,7 @@ const get_count_access = async (req, res) => {
       if (!tbl_access.rawAttributes[fieldName]) {
         return res.status(404).json({
           success: false,
-          message: 'Nama kolom tidak valid',
+          message: "Nama kolom tidak valid",
           data: null,
         });
       }
@@ -489,21 +503,20 @@ const get_count_access = async (req, res) => {
 
     const response = {
       success: true,
-      message: 'Sukses mendapatkan data',
+      message: "Sukses mendapatkan data",
       data: counts,
     };
 
     return res.status(200).json(response);
   } catch (error) {
-    console.error('Internal server error:', error);
+    console.error("Internal server error:", error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error',
+      message: "Internal server error",
       data: null,
     });
   }
 };
-
 
 module.exports = {
   post_access,
