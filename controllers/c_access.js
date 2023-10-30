@@ -160,41 +160,34 @@ const delete_access = async (req, res) => {
 const get_all_access = async (req, res) => {
   try {
     const { 
-      limit = null, 
+      limit = null,
       page = null,
       keyword = '', 
-      order = { access_id: 'desc' }, 
+      order = { access_id: 'desc' },  // Default order
       filter = {} 
     } = req.query;
 
     let offset = limit && page ? (page - 1) * limit : 0;
     const validOrderFields = Object.keys(tbl_access.rawAttributes);
-    
-    // Mengekstrak field dan arah urutan dari URL
     const orderField = Object.keys(order)[0];
-    const orderDirection = order[orderField]?.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
-    // Menentukan apakah field pengurutan valid
+    // Periksa apakah kolom yang diizinkan
     const isValidOrderField = validOrderFields.includes(orderField);
 
-    // Menentukan query urutan
-    const orderQuery = isValidOrderField ? [[orderField, orderDirection]] : [['access_id', 'DESC']];
+    const orderDirection = isValidOrderField && orderField !== 'access_id' 
+      ? 'ASC'  // Set arah pengurutan ke ASC untuk semua kolom selain access_id
+      : 'DESC';
 
     const whereClause = {
       access_delete_at: null,
     };
 
-    if (filter.access_modul && filter.access_permission && filter.access_level) {
-      whereClause.access_modul = Array.isArray(filter.access_modul) 
-      ? filter.access_modul 
-      : filter.access_modul.split(',');
-      whereClause.access_permission = Array.isArray(filter.access_permission) 
-      ? filter.access_permission 
-      : filter.access_permission.split(',');
-      whereClause.access_level = Array.isArray(filter.access_level) 
-      ? filter.access_level 
-      : filter.access_level.split(',');
-    }
+    // Menangani filter untuk semua properti pada objek filter
+    Object.keys(filter).forEach((field) => {
+      whereClause[field] = Array.isArray(filter[field])
+        ? filter[field]
+        : filter[field].split(',');
+    });
 
     if (keyword) {
       const keywordClause = {
@@ -205,10 +198,14 @@ const get_all_access = async (req, res) => {
       offset = 0;
 
       whereClause.access_modul = whereClause.access_modul
-      ? { [Sequelize.Op.and]: [whereClause.access_modul, keywordClause] }
-      : keywordClause;
+        ? { [Sequelize.Op.and]: [whereClause.access_modul, keywordClause] }
+        : keywordClause;
     }
 
+    // Menggunakan order dari parameter URL jika valid, jika tidak, menggunakan default order
+    const orderQuery = isValidOrderField ? [[orderField, orderDirection]] : [['access_uuid', 'DESC']];
+
+    // Query data menggunakan Sequelize
     const { count, rows } = await tbl_access.findAndCountAll({
       where: whereClause,
       order: orderQuery,
