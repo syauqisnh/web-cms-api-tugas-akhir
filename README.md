@@ -6,7 +6,7 @@
 npm install
 ```
 
-### Create db
+### Create Database
 
 ```sh
 npx sequelize-cli db:create
@@ -18,7 +18,7 @@ npx sequelize-cli db:create
 npx sequelize-cli db:migrate
 ```
 
-### Seeder Data (opsional)
+### Seeder Data
 
 ```sh
 npx sequelize-cli db:seed:all
