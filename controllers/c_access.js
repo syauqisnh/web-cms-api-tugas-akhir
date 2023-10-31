@@ -475,68 +475,95 @@ const get_count_access = async (req, res) => {
   try {
     const { field } = req.query;
 
-    if (!field || !Array.isArray(field)) {
+    if (!field) {
       return res.status(400).json({
         success: false,
-        message: "Parameter field harus berupa array",
+        message: 'Parameter "field" diperlukan',
         data: null,
       });
     }
 
-    const counts = {};
+    const tableAttributes = tbl_access.rawAttributes;
+    const fieldNames = Object.keys(field);
 
-    for (const fieldObject of field) {
-      const fieldName = Object.keys(fieldObject)[0];
-      const values = Array.isArray(fieldObject[fieldName])
-        ? fieldObject[fieldName]
-        : [fieldObject[fieldName]];
+    const invalidFields = fieldNames.filter((fieldName) => !(fieldName in tableAttributes));
 
-      if (!tbl_access.rawAttributes[fieldName]) {
+    if (invalidFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Nama kolom tidak valid: " + invalidFields.join(", "),
+        data: null,
+      });
+    }
+
+    const resultData = {};
+
+    for (const fieldName of fieldNames) {
+      const fieldValues = field[fieldName].split(',');
+
+      let relatedModel, relatedAs, relatedNameColumn;
+
+      if (fieldName === 'access_modul') {
+        relatedModel = tbl_modules;
+        relatedAs = 'access_modul_as';
+        relatedNameColumn = 'module_name';
+      } else if (fieldName === 'access_permission') {
+        relatedModel = tbl_permissions;
+        relatedAs = 'access_permission_as';
+        relatedNameColumn = 'permission_name';
+      } else {
+        relatedModel = tbl_levels;
+        relatedAs = 'access_level_as';
+        relatedNameColumn = 'level_name';
+      }
+
+      const counts = await tbl_access.findAll({
+        attributes: [
+          [Sequelize.col(`${relatedAs}.${relatedNameColumn}`), 'value'],
+          [Sequelize.fn('COUNT', Sequelize.col(`${relatedAs}.${relatedNameColumn}`)), 'count']
+        ],
+        where: {
+          [fieldName]: {
+            [Sequelize.Op.in]: fieldValues
+          },
+          access_delete_at: null,
+        },
+        include: [{
+          model: relatedModel,
+          attributes: [],
+          as: relatedAs
+        }],
+        group: [Sequelize.col(`${relatedAs}.${relatedNameColumn}`)],
+        raw: true,
+      });
+
+      if (counts.length === 0) {
         return res.status(404).json({
           success: false,
-          message: "Nama kolom tidak valid",
+          message: 'Data tidak ditemukan untuk field ' + fieldName,
           data: null,
         });
       }
 
-      const valueCounts = {};
-
-      for (const value of values) {
-        const count = await tbl_access.count({
-          where: {
-            [fieldName]: {
-              [Sequelize.Op.not]: null,
-              [Sequelize.Op.eq]: value,
-            },
-            access_delete_at: null,
-          },
-        });
-
-        valueCounts[value] = count;
-      }
-
-      counts[fieldName] = Object.keys(valueCounts).map((value) => ({
-        value,
-        count: valueCounts[value],
-      }));
+      resultData[fieldName] = counts;
     }
 
-    const response = {
+    res.status(200).json({
       success: true,
       message: "Sukses mendapatkan data",
-      data: counts,
-    };
+      data: resultData,
+    });
 
-    return res.status(200).json(response);
   } catch (error) {
-    console.error("Internal server error:", error);
-    res.status(500).json({
+    console.error("Terjadi kesalahan:", error);
+    return res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: "Terjadi kesalahan pada server",
       data: null,
     });
   }
 };
+
 
 module.exports = {
   post_access,
