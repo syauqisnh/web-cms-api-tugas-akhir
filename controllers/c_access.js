@@ -176,20 +176,16 @@ const get_all_access = async (req, res) => {
     let offset = limit && page ? (page - 1) * limit : 0;
     const validOrderFields = Object.keys(tbl_access.rawAttributes);
     const orderField = Object.keys(order)[0];
+    const orderDirection = order[orderField];
 
-    // Periksa apakah kolom yang diizinkan
+    // Check if the column is allowed
     const isValidOrderField = validOrderFields.includes(orderField);
-
-    const orderDirection =
-      isValidOrderField && orderField !== "access_id"
-        ? "ASC" // Set arah pengurutan ke ASC untuk semua kolom selain access_id
-        : "DESC";
 
     const whereClause = {
       access_delete_at: null,
     };
 
-    // Menangani filter untuk semua properti pada objek filter
+    // Handle filters for all properties in the filter object
     Object.keys(filter).forEach((field) => {
       whereClause[field] = Array.isArray(filter[field])
         ? filter[field]
@@ -209,15 +205,26 @@ const get_all_access = async (req, res) => {
         : keywordClause;
     }
 
-    // Menggunakan order dari parameter URL jika valid, jika tidak, menggunakan default order
-    const orderQuery = isValidOrderField
-      ? [[orderField, orderDirection]]
-      : [["access_uuid", "DESC"]];
+    // Use the order from the URL parameter if valid; otherwise, use the default order
+    let orderQuery;
+    if (orderField === "modul_name") {
+      orderQuery = [["access_modul_as", "module_name", orderDirection]];
+    } else if (orderField === "permission_name") {
+      orderQuery = [
+        ["access_permission_as", "permission_name", orderDirection],
+      ];
+    } else if (orderField === "level_name") {
+      orderQuery = [["access_level_as", "level_name", orderDirection]];
+    } else if (isValidOrderField) {
+      orderQuery = [[orderField, orderDirection]];
+    } else {
+      orderQuery = [["access_uuid", "DESC"]];
+    }
 
-    // Query data menggunakan Sequelize
+    // Query data using Sequelize
     const { count, rows } = await tbl_access.findAndCountAll({
       where: whereClause,
-      order: isValidOrderField ? [[orderField, orderDirection]] : undefined,
+      order: orderQuery,
       limit: limit ? parseInt(limit) : null,
       offset: offset,
       include: [
@@ -253,14 +260,14 @@ const get_all_access = async (req, res) => {
       return true;
     });
 
-    console.log("Data Akses:", uniqueRows);
+    console.log("Access Data:", uniqueRows);
 
     const totalPages = Math.ceil(count / limit);
     const hasNextPage = page < totalPages;
 
     const result = {
       success: true,
-      message: "Sukses mendapatkan data",
+      message: "Successfully retrieved data",
       data: uniqueRows.map((row) => ({
         access_uuid: row.access_uuid,
         access_modul: row.access_modul_as
@@ -302,10 +309,10 @@ const get_all_access = async (req, res) => {
 
     res.status(200).json(result);
   } catch (error) {
-    console.error(error, "Kesalahan Sistem");
+    console.error(error, "System Error");
     res.status(500).json({
       success: false,
-      message: "Kesalahan Internal Server",
+      message: "Internal Server Error",
       data: null,
     });
   }
@@ -405,7 +412,9 @@ const get_unique_access = async (req, res) => {
     if (invalidFields.length > 0) {
       return res.status(400).json({
         success: false,
-        message: "Parameter tidak valid (kolom tidak ditemukan): " + invalidFields.join(", "),
+        message:
+          "Parameter tidak valid (kolom tidak ditemukan): " +
+          invalidFields.join(", "),
         data: null,
       });
     }
@@ -414,43 +423,72 @@ const get_unique_access = async (req, res) => {
 
     for (const f of fieldsArray) {
       switch (f) {
-        case 'access_modul':
+        case "access_modul":
           const modulValues = await tbl_access.findAll({
-            attributes: [[Sequelize.literal(`DISTINCT access_modul_as.module_name`), 'module_name']],
-            include: [{ model: tbl_modules, as: 'access_modul_as', attributes: [] }],
+            attributes: [
+              [
+                Sequelize.literal(`DISTINCT access_modul_as.module_name`),
+                "module_name",
+              ],
+            ],
+            include: [
+              { model: tbl_modules, as: "access_modul_as", attributes: [] },
+            ],
             where: { access_delete_at: null },
-            raw: true
+            raw: true,
           });
-          uniqueValues[f] = modulValues.map(item => item.module_name);
+          uniqueValues[f] = modulValues.map((item) => item.module_name);
           break;
 
-        case 'access_permission':
+        case "access_permission":
           const permissionValues = await tbl_access.findAll({
-            attributes: [[Sequelize.literal(`DISTINCT access_permission_as.permission_name`), 'permission_name']],
-            include: [{ model: tbl_permissions, as: 'access_permission_as', attributes: [] }],
+            attributes: [
+              [
+                Sequelize.literal(
+                  `DISTINCT access_permission_as.permission_name`
+                ),
+                "permission_name",
+              ],
+            ],
+            include: [
+              {
+                model: tbl_permissions,
+                as: "access_permission_as",
+                attributes: [],
+              },
+            ],
             where: { access_delete_at: null },
-            raw: true
+            raw: true,
           });
-          uniqueValues[f] = permissionValues.map(item => item.permission_name);
+          uniqueValues[f] = permissionValues.map(
+            (item) => item.permission_name
+          );
           break;
 
-        case 'access_level':
+        case "access_level":
           const levelValues = await tbl_access.findAll({
-            attributes: [[Sequelize.literal(`DISTINCT access_level_as.level_name`), 'level_name']],
-            include: [{ model: tbl_levels, as: 'access_level_as', attributes: [] }],
+            attributes: [
+              [
+                Sequelize.literal(`DISTINCT access_level_as.level_name`),
+                "level_name",
+              ],
+            ],
+            include: [
+              { model: tbl_levels, as: "access_level_as", attributes: [] },
+            ],
             where: { access_delete_at: null },
-            raw: true
+            raw: true,
           });
-          uniqueValues[f] = levelValues.map(item => item.level_name);
+          uniqueValues[f] = levelValues.map((item) => item.level_name);
           break;
 
         default:
           const otherValues = await tbl_access.findAll({
             attributes: [[Sequelize.literal(`DISTINCT \`${f}\``), f]],
             where: { access_delete_at: null },
-            raw: true
+            raw: true,
           });
-          uniqueValues[f] = otherValues.map(item => item[f]);
+          uniqueValues[f] = otherValues.map((item) => item[f]);
           break;
       }
     }
@@ -470,7 +508,6 @@ const get_unique_access = async (req, res) => {
   }
 };
 
-
 const get_count_access = async (req, res) => {
   try {
     const { field } = req.query;
@@ -486,7 +523,9 @@ const get_count_access = async (req, res) => {
     const tableAttributes = tbl_access.rawAttributes;
     const fieldNames = Object.keys(field);
 
-    const invalidFields = fieldNames.filter((fieldName) => !(fieldName in tableAttributes));
+    const invalidFields = fieldNames.filter(
+      (fieldName) => !(fieldName in tableAttributes)
+    );
 
     if (invalidFields.length > 0) {
       return res.status(400).json({
@@ -499,40 +538,48 @@ const get_count_access = async (req, res) => {
     const resultData = {};
 
     for (const fieldName of fieldNames) {
-      const fieldValues = field[fieldName].split(',');
+      const fieldValues = field[fieldName].split(",");
 
       let relatedModel, relatedAs, relatedNameColumn;
 
-      if (fieldName === 'access_modul') {
+      if (fieldName === "access_modul") {
         relatedModel = tbl_modules;
-        relatedAs = 'access_modul_as';
-        relatedNameColumn = 'module_name';
-      } else if (fieldName === 'access_permission') {
+        relatedAs = "access_modul_as";
+        relatedNameColumn = "module_name";
+      } else if (fieldName === "access_permission") {
         relatedModel = tbl_permissions;
-        relatedAs = 'access_permission_as';
-        relatedNameColumn = 'permission_name';
+        relatedAs = "access_permission_as";
+        relatedNameColumn = "permission_name";
       } else {
         relatedModel = tbl_levels;
-        relatedAs = 'access_level_as';
-        relatedNameColumn = 'level_name';
+        relatedAs = "access_level_as";
+        relatedNameColumn = "level_name";
       }
 
       const counts = await tbl_access.findAll({
         attributes: [
-          [Sequelize.col(`${relatedAs}.${relatedNameColumn}`), 'value'],
-          [Sequelize.fn('COUNT', Sequelize.col(`${relatedAs}.${relatedNameColumn}`)), 'count']
+          [Sequelize.col(`${relatedAs}.${relatedNameColumn}`), "value"],
+          [
+            Sequelize.fn(
+              "COUNT",
+              Sequelize.col(`${relatedAs}.${relatedNameColumn}`)
+            ),
+            "count",
+          ],
         ],
         where: {
           [fieldName]: {
-            [Sequelize.Op.in]: fieldValues
+            [Sequelize.Op.in]: fieldValues,
           },
           access_delete_at: null,
         },
-        include: [{
-          model: relatedModel,
-          attributes: [],
-          as: relatedAs
-        }],
+        include: [
+          {
+            model: relatedModel,
+            attributes: [],
+            as: relatedAs,
+          },
+        ],
         group: [Sequelize.col(`${relatedAs}.${relatedNameColumn}`)],
         raw: true,
       });
@@ -540,7 +587,7 @@ const get_count_access = async (req, res) => {
       if (counts.length === 0) {
         return res.status(404).json({
           success: false,
-          message: 'Data tidak ditemukan untuk field ' + fieldName,
+          message: "Data tidak ditemukan untuk field " + fieldName,
           data: null,
         });
       }
@@ -553,7 +600,6 @@ const get_count_access = async (req, res) => {
       message: "Sukses mendapatkan data",
       data: resultData,
     });
-
   } catch (error) {
     console.error("Terjadi kesalahan:", error);
     return res.status(500).json({
@@ -563,7 +609,6 @@ const get_count_access = async (req, res) => {
     });
   }
 };
-
 
 module.exports = {
   post_access,
