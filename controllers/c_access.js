@@ -393,21 +393,19 @@ const get_unique_access = async (req, res) => {
     if (!field) {
       return res.status(400).json({
         success: false,
-        message: 'Parameter "Field" diperlukan',
+        message: 'Parameter "field" diperlukan',
         data: null,
       });
     }
 
     const fieldsArray = field.split(",");
-
     const tableAttributes = tbl_access.rawAttributes;
-
     const invalidFields = fieldsArray.filter((f) => !(f in tableAttributes));
 
     if (invalidFields.length > 0) {
       return res.status(400).json({
         success: false,
-        message: "Parameter tidak valid: " + invalidFields.join(", "),
+        message: "Parameter tidak valid (kolom tidak ditemukan): " + invalidFields.join(", "),
         data: null,
       });
     }
@@ -415,41 +413,63 @@ const get_unique_access = async (req, res) => {
     const uniqueValues = {};
 
     for (const f of fieldsArray) {
-      const values = await tbl_access.findAll({
-        attributes: [
-          [
-            Sequelize.literal(
-              `DISTINCT \`${tbl_access.rawAttributes[f].field}\``
-            ),
-            f,
-          ],
-        ],
-        where: {
-          access_delete_at: null,
-        },
-      });
+      switch (f) {
+        case 'access_modul':
+          const modulValues = await tbl_access.findAll({
+            attributes: [[Sequelize.literal(`DISTINCT access_modul_as.module_name`), 'module_name']],
+            include: [{ model: tbl_modules, as: 'access_modul_as', attributes: [] }],
+            where: { access_delete_at: null },
+            raw: true
+          });
+          uniqueValues[f] = modulValues.map(item => item.module_name);
+          break;
 
-      if (values && values.length > 0) {
-        uniqueValues[f] = values.map((item) => item.get(f));
-      } else {
-        uniqueValues[f] = [];
+        case 'access_permission':
+          const permissionValues = await tbl_access.findAll({
+            attributes: [[Sequelize.literal(`DISTINCT access_permission_as.permission_name`), 'permission_name']],
+            include: [{ model: tbl_permissions, as: 'access_permission_as', attributes: [] }],
+            where: { access_delete_at: null },
+            raw: true
+          });
+          uniqueValues[f] = permissionValues.map(item => item.permission_name);
+          break;
+
+        case 'access_level':
+          const levelValues = await tbl_access.findAll({
+            attributes: [[Sequelize.literal(`DISTINCT access_level_as.level_name`), 'level_name']],
+            include: [{ model: tbl_levels, as: 'access_level_as', attributes: [] }],
+            where: { access_delete_at: null },
+            raw: true
+          });
+          uniqueValues[f] = levelValues.map(item => item.level_name);
+          break;
+
+        default:
+          const otherValues = await tbl_access.findAll({
+            attributes: [[Sequelize.literal(`DISTINCT \`${f}\``), f]],
+            where: { access_delete_at: null },
+            raw: true
+          });
+          uniqueValues[f] = otherValues.map(item => item[f]);
+          break;
       }
     }
 
     return res.status(200).json({
       success: true,
-      message: "Sukses mendapatkan data",
+      message: "Sukses mendapatkan data unik",
       data: uniqueValues,
     });
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: "Terjadi kesalahan pada server",
       data: null,
     });
   }
 };
+
 
 const get_count_access = async (req, res) => {
   try {
