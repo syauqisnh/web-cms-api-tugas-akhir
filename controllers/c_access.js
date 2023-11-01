@@ -169,7 +169,7 @@ const get_all_access = async (req, res) => {
       limit = null,
       page = null,
       keyword = "",
-      order = { access_id: "desc" }, // Default order
+      order = { access_id: "desc" },
       filter = {},
     } = req.query;
 
@@ -177,20 +177,20 @@ const get_all_access = async (req, res) => {
     const validOrderFields = Object.keys(tbl_access.rawAttributes);
     const orderField = Object.keys(order)[0];
     const orderDirection = order[orderField];
-
-    // Check if the column is allowed
     const isValidOrderField = validOrderFields.includes(orderField);
 
     const whereClause = {
       access_delete_at: null,
+      ...(filter.access_modul
+        ? { access_modul: filter.access_modul.split(",") }
+        : null),
+      ...(filter.access_permission
+        ? { access_permission: filter.access_permission.split(",") }
+        : null),
+      ...(filter.access_level
+        ? { access_level: filter.access_level.split(",") }
+        : null),
     };
-
-    // Handle filters for all properties in the filter object
-    Object.keys(filter).forEach((field) => {
-      whereClause[field] = Array.isArray(filter[field])
-        ? filter[field]
-        : filter[field].split(",");
-    });
 
     if (keyword) {
       const keywordClause = {
@@ -205,7 +205,6 @@ const get_all_access = async (req, res) => {
         : keywordClause;
     }
 
-    // Use the order from the URL parameter if valid; otherwise, use the default order
     let orderQuery;
     if (orderField === "modul_name") {
       orderQuery = [["access_modul_as", "module_name", orderDirection]];
@@ -221,7 +220,6 @@ const get_all_access = async (req, res) => {
       orderQuery = [["access_uuid", "DESC"]];
     }
 
-    // Query data using Sequelize
     const { count, rows } = await tbl_access.findAndCountAll({
       where: whereClause,
       order: orderQuery,
@@ -232,16 +230,40 @@ const get_all_access = async (req, res) => {
           model: tbl_modules,
           as: "access_modul_as",
           attributes: ["module_uuid", "module_name"],
+          where: {
+            ...(filter.modul_uuid
+              ? { module_uuid: filter.modul_uuid.split(",") }
+              : null),
+            ...(filter.modul_name
+              ? { module_name: filter.modul_name.split(",") }
+              : null),
+          },
         },
         {
           model: tbl_permissions,
           as: "access_permission_as",
           attributes: ["permission_uuid", "permission_name"],
+          where: {
+            ...(filter.permission_uuid
+              ? { permission_uuid: filter.permission_uuid.split(",") }
+              : null),
+            ...(filter.permission_name
+              ? { permission_name: filter.permission_name.split(",") }
+              : null),
+          },
         },
         {
           model: tbl_levels,
           as: "access_level_as",
           attributes: ["level_uuid", "level_name"],
+          where: {
+            ...(filter.level_uuid
+              ? { level_uuid: filter.level_uuid.split(",") }
+              : null),
+            ...(filter.level_name
+              ? { level_name: filter.level_name.split(",") }
+              : null),
+          },
         },
       ],
       replacements: {
