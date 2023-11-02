@@ -13,7 +13,7 @@ const post_access = async (req, res) => {
     if (!access_modul || !access_permission || !access_level) {
       return res.status(400).json({
         success: false,
-        message: "Data harus di isi",
+        message: "Belum ada data yang di isi",
         data: null,
       });
     }
@@ -64,7 +64,7 @@ const post_access = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error, "System Error");
+    console.log(error, "Data Error");
     res.status(500).json({
       success: false,
       message: "Internal Server Eror",
@@ -122,7 +122,7 @@ const put_access = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error, "System Error");
+    console.log(error, "Data Error");
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -154,7 +154,7 @@ const delete_access = async (req, res) => {
       message: "Sukses menghapus data",
     });
   } catch (error) {
-    console.error(error, "System Error");
+    console.log(error, "Data Error");
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -330,7 +330,7 @@ const get_all_access = async (req, res) => {
 
     res.status(200).json(result);
   } catch (error) {
-    console.error(error, "System Error");
+    console.log(error, "Data Error");
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -405,7 +405,7 @@ const get_detail_access = async (req, res) => {
 
     res.status(200).json(result);
   } catch (error) {
-    console.log(error, "System Error");
+    console.log(error, "Data Error");
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -483,7 +483,7 @@ const get_unique_access = async (req, res) => {
       data: uniqueValues,
     });
   } catch (error) {
-    console.error("Error:", error);
+    console.log(error, "Data Error")
     return res.status(500).json({
       success: false,
       message: "Terjadi kesalahan pada server",
@@ -585,7 +585,7 @@ const get_count_access = async (req, res) => {
       data: resultData,
     });
   } catch (error) {
-    console.error("Terjadi kesalahan:", error);
+    console.log(error, "Data Error")
     return res.status(500).json({
       success: false,
       message: "Terjadi kesalahan pada server",

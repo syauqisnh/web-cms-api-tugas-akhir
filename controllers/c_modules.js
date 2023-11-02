@@ -8,9 +8,9 @@ const post_module = async (req, res) => {
         const {module_name} = req.body;
 
         if (!module_name) {
-            return res.status(404).json({
+            return res.status(400).json({
                 success: false,
-                message: 'Data harus di isi',
+                message: 'Belum ada data yang di isi',
                 data: null,
             })
         }
@@ -25,7 +25,7 @@ const post_module = async (req, res) => {
         if (!new_modules) {
             return res.status(404).json({
                 success: false,
-                message: 'Gagal mendapatkan data',
+                message: 'Gagal menambahkan data',
                 data: null,
             })
         }
@@ -54,9 +54,9 @@ const put_module = async (req, res) => {
         const {module_name} = req.body;
 
         if (!module_name) {
-            return res.status(404).json({
+            return res.status(400).json({
                 success: false,
-                message: 'Data ini harus di isi',
+                message: 'Belum ada data yang di isi',
                 data: null
             })
         }

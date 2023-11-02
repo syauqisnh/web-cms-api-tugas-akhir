@@ -344,7 +344,6 @@ const get_unique_levels = async (req, res) => {
   }
 };
 
-// Untuk Mendapatkan Jumlah Data Pada Database (perbaikan)
 const get_count_levels = async (req, res) => {
   try {
     const {field} = req.query;
