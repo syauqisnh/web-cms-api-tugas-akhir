@@ -215,9 +215,124 @@ const get_detail_customer = async (req, res) => {
     }
 }
 
+const get_all_customer = async (req, res) => {
+    try {
+        const {
+            limit = null,
+            page = null,
+            keyword = '',
+            filter = {},
+            order = {customer_id: 'desc'}
+        } = req.query;
+
+        let offset = limit && page ? (page - 1) * limit : 0;
+        const orderField = Object.keys(order)[0];
+        const orderDirection = order[orderField]?.toLowerCase() === "asc" ? "ASC" : "DESC";
+
+        const whereClause = {
+            customer_delete_at: null,
+        }
+
+        if (filter.customer_username) {
+            const filterNames = Array.isArray(filter.customer_username)
+            ? filter.customer_username
+            : filter.customer_username.split(',');
+
+            if (filterNames.length > 0) {
+                whereClause.customer_username = {
+                  [Sequelize.Op.or]: filterNames.map(name => ({
+                    [Sequelize.Op.like]: `%${name.trim()}%`,
+                  })),
+                  [Sequelize.Op.not]: null,
+                };
+              } else {
+                console.log("Empty filter.customer_name");
+                return res.status(404).json({
+                  success: false,
+                  message: 'Data Tidak Di Temukan'
+                });
+              }
+        }
+        if (keyword) {
+            const keywordClause = {
+              [Sequelize.Op.like]: `%${keyword}%`,
+            };
+            offset = 0; 
+      
+            whereClause.customer_username = whereClause.customer_username
+              ? { [Sequelize.Op.and]: [whereClause.customer_username, keywordClause] }
+              : keywordClause;
+        }
+
+        const data = await tbl_customer.findAndCountAll({
+            where: whereClause,
+            order: [[orderField, orderDirection]],
+            limit: limit ? parseInt(limit) : null,
+            offset: offset ? parseInt(offset) : null,
+          });
+          
+          const totalPages = limit ? Math.ceil(data.count / (limit || 1)) : 1;
+
+          const result = {
+            success: true,
+            message: "Sukses mendapatkan data",
+            data: data.rows.map((customer) => ({
+                customer_username: customer.customer_username,
+                customer_full_name: customer.customer_full_name,
+                customer_nohp: customer.customer_nohp,
+                customer_address: customer.customer_address,
+                customer_email: customer.customer_email,
+            })),
+            pages: {
+              total: data.count,
+              per_page: limit || data.count,
+              next_page: limit && page ? (page < totalPages ? page + 1 : null) : null,
+              to: limit ? offset + data.rows.length : data.count,
+              last_page: totalPages,
+              current_page: page || 1,
+              from: offset,
+            },
+          };
+
+          if (data.count === 0) {
+            return res.status(404).json({
+              success: false,
+              message: "Data Tidak Ditemukan",
+              data: null,
+              pages: {
+                total: 0,
+                per_page: limit || 0,
+                next_page: null,
+                to: 0,
+                last_page: 0,
+                current_page: page || 1,
+                from: 0,
+              },
+            });
+          }
+
+          const currentUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+          const excludePagesUrl = "http://localhost:9900/api/v1/customer/get_all";
+      
+          if (currentUrl === excludePagesUrl) {
+            delete result.pages
+          }
+      
+          res.status(200).json(result);
+    } catch (error) {
+        console.log(error, 'Data Error')
+        res.status(500).json({
+            success: false,
+            message: 'Internal Server Error',
+            data: null
+        })
+    }
+}
+
 module.exports = {
     post_customer,
     put_customer,
     delete_customer,
     get_detail_customer,
+    get_all_customer,
 }
