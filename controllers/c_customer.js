@@ -173,8 +173,51 @@ const delete_customer = async (req, res) => {
     }
 }
 
+const get_detail_customer = async (req, res) => {
+    try {
+        const {customer_uuid} = req.params;
+
+        const detail_customer = await tbl_customer.findOne({
+            where: {
+                customer_uuid,
+                customer_delete_at: null
+            }
+        })
+
+        if (!detail_customer) {
+            return res.status(404).json({
+                success: false,
+                message: 'Gagal Mendapatkan Data',
+                data: null
+            })
+        }
+
+        const result = {
+            success: true,
+            message: 'Berhasil Mendapatakan Data',
+            data: {
+                customer_username: detail_customer.customer_username,
+                customer_full_name: detail_customer.customer_full_name,
+                customer_nohp: detail_customer.customer_nohp,
+                customer_address: detail_customer.customer_address,
+                customer_email: detail_customer.customer_email,
+            }
+        }
+
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error, 'Data Error')
+        res.status(500).json({
+            success: false,
+            message: 'Internal Server Error',
+            data: null
+        })
+    }
+}
+
 module.exports = {
     post_customer,
     put_customer,
-    delete_customer
+    delete_customer,
+    get_detail_customer,
 }
