@@ -329,10 +329,65 @@ const get_all_customer = async (req, res) => {
     }
 }
 
+const get_uniqe_customer = async (req, res) => {
+    try {
+        const {field} = req.query;
+
+        if (!field) {
+            return res.status(400).json({
+                success: false,
+                message: 'Parameter FIELD harus di isikan',
+                data: null
+            })
+        }
+    
+        const fieldsArray = field.split(',');
+        const tableAttributes = tbl_customer.rawAttributes;
+        const invalidFields = fieldsArray.filter((f) => !(f in tableAttributes));
+    
+        if (invalidFields.length > 0) {
+            return res.status(200).json({
+                success: false,
+                message: 'Gagal mendapatkan data',
+                data: null
+            })
+        }
+
+        const uniqeValues = {};
+
+        for (const f of fieldsArray) {
+            const values = await tbl_customer.findAll({
+                attributes: [[Sequelize.fn('DISTINCT', Sequelize.col(f)), f]],
+                where: {
+                    customer_delete_at: null,
+                }
+            });
+
+            if (values && values.length > 0) {
+                uniqeValues[f] = values.map((item) => item[f]);
+            }
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Sukses mendapatkan data',
+            data: uniqeValues,
+        })
+    } catch (error) {
+        console.log(error, 'Data Error');
+        res.status(500).json({
+            success: false,
+            message: 'Internal Server Error',
+            data: null
+        })
+    }
+}
+
 module.exports = {
     post_customer,
     put_customer,
     delete_customer,
     get_detail_customer,
     get_all_customer,
+    get_uniqe_customer,
 }
