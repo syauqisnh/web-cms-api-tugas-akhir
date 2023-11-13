@@ -383,6 +383,65 @@ const get_uniqe_customer = async (req, res) => {
     }
 }
 
+const get_count_customer = async (req, res) => {
+    try {
+        const {field} = req.query;
+    
+        if (!field || typeof field !== 'object') {
+          return res.status(400).json({
+            success: false,
+            message: 'Parameter field harus berupa objek',
+            data: null,
+          });
+        }
+    
+        const counts = {};
+    
+        for (const fieldName in field) {
+          if (field.hasOwnProperty(fieldName)) {
+            const values = Array.isArray(field[fieldName])
+              ? field[fieldName]
+              : field[fieldName].split(',').map((val) => val.trim());
+    
+            const valueCounts = {}; 
+    
+            for (const value of values) {
+              const count = await tbl_customer.count({
+                where: {
+                  [fieldName]: {
+                    [Sequelize.Op.not]: null,
+                    [Sequelize.Op.eq]: value,
+                  },
+                  customer_delete_at: null
+                },
+              });
+              valueCounts[value] = count;
+            }
+    
+            counts[fieldName] = Object.keys(valueCounts).map((value) => ({
+              value,
+              count: valueCounts[value],
+            }));
+          }
+        }
+    
+        const response = {
+          success: true,
+          message: 'Sukses mendapatkan data',
+          data: counts,
+        };
+    
+        return res.status(200).json(response);
+      } catch (error) {
+        console.error('Internal server error:', error);
+        res.status(500).json({
+          success: false,
+          message: 'Internal server error',
+          data: null,
+        });
+      }
+}
+
 module.exports = {
     post_customer,
     put_customer,
@@ -390,4 +449,5 @@ module.exports = {
     get_detail_customer,
     get_all_customer,
     get_uniqe_customer,
+    get_count_customer,
 }
