@@ -1,5 +1,6 @@
 const db = require('../models');
 const tbl_customer = db.tbl_customer;
+const tbl_media = db.tbl_media;
 const { v4: uuidv4 } = require("uuid");
 const Sequelize = require('sequelize');
 const bcrypt = require('bcrypt');
@@ -29,6 +30,7 @@ const post_customer = async (req, res) => {
         
         const hashedPassword = await bcrypt.hash(customer_password, saltRounds);
 
+        // Membuat pelanggan baru
         const create_customer = await tbl_customer.create({
             customer_uuid: customer_uuid,
             customer_username: customer_username,
@@ -42,14 +44,26 @@ const post_customer = async (req, res) => {
         if (!create_customer) {
             return res.status(404).json({
                 success: false,
-                message: 'Gagal menambahkan data',
+                message: 'Gagal menambahkan data pelanggan',
+                data: null
+            });
+        }
+
+        const create_media = await tbl_media.create({
+            media_uuid_table: create_customer.customer_uuid,
+        });
+
+        if (!create_media) {
+            return res.status(404).json({
+                success: false,
+                message: 'Gagal menambahkan data media',
                 data: null
             });
         }
 
         res.status(200).json({
             success: true,
-            message: 'Berhasil menambahkan data',
+            message: 'Berhasil menambahkan data pelanggan dan media',
             data: {
                 customer_uuid: create_customer.customer_uuid,
                 customer_username: create_customer.customer_username,
@@ -68,6 +82,7 @@ const post_customer = async (req, res) => {
         });
     }
 }
+
 
 const put_customer = async (req, res) =>  {
     try {

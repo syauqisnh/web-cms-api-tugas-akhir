@@ -3,7 +3,7 @@ const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class tbl_levels extends Model {
     static associate(models) {
-
+      
    }   
   }
   tbl_levels.init(
