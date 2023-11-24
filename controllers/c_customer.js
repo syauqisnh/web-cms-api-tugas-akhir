@@ -5,20 +5,20 @@ const { v4: uuidv4 } = require("uuid");
 const Sequelize = require('sequelize');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
+// const Joi = require('joi');
 
 const post_customer = async (req, res) => {
     try {
         const {
             customer_username,
             customer_full_name,
-            customer_nohp,  
+            customer_nohp, 
             customer_address,
             customer_email,
             customer_password,
         } = req.body;
     
-        if (!customer_username || !customer_full_name || !customer_nohp || !customer_address 
-            || !customer_email || !customer_password) {
+        if (!customer_username || !customer_full_name || !customer_email || !customer_password) {
             return res.status(400).json({
                 success: false,
                 message: 'Belum ada data yang diisi',
@@ -51,6 +51,7 @@ const post_customer = async (req, res) => {
 
         const create_media = await tbl_media.create({
             media_uuid_table: create_customer.customer_uuid,
+            media_table: 'customer'
         });
 
         if (!create_media) {
@@ -83,7 +84,6 @@ const post_customer = async (req, res) => {
     }
 }
 
-
 const put_customer = async (req, res) =>  {
     try {
         const {customer_uuid} = req.params;
@@ -96,8 +96,7 @@ const put_customer = async (req, res) =>  {
             customer_password,
         } = req.body;
 
-        if (!customer_username || !customer_full_name || !customer_nohp 
-            || !customer_address || !customer_email || !customer_password) {
+        if (!customer_username || !customer_full_name || !customer_email || !customer_password) {
             return res.status(400).json({
                 success: false,
                 message: 'Data harus di isi',
@@ -161,32 +160,39 @@ const delete_customer = async (req, res) => {
         const delete_customer = await tbl_customer.findOne({
             where: {
                 customer_uuid
-            }
-        })
+            },
+        });
 
         if (!delete_customer) {
             return res.status(404).json({
                 success: false,
-                message: 'Gagal menghapus data',
+                message: 'Gagal menghapus data pelanggan',
                 data: null
-            })
+            });
         }
+
         await delete_customer.update({ customer_delete_at: new Date() });
+
+        await tbl_media.update(
+            { media_delete_at: new Date() },
+            { where: { media_uuid_table: customer_uuid, media_table: 'customer' } }
+        );
 
         res.json({
             success: true,
-            message: "Sukses menghapus data",
+            message: "Sukses menghapus data pelanggan dan data media terkait",
         });
 
     } catch (error) {
-        console.log(error, 'Data Error')
+        console.log(error, 'Data Error');
         res.status(500).json({
             success: false,
             message: 'Internal Server Error',
             data: null
-        })
+        });
     }
 }
+
 
 const get_detail_customer = async (req, res) => {
     try {

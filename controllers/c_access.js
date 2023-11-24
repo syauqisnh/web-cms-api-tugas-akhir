@@ -174,9 +174,9 @@ const get_all_access = async (req, res) => {
     } = req.query;
 
     let offset = limit && page ? (page - 1) * limit : 0;
-    const validOrderFields = Object.keys(tbl_access.rawAttributes);
+    const validOrderFields = ["access_id", "access_modul_as.module_name", "access_permission_as.permission_name", "access_level_as.level_name"];
     const orderField = Object.keys(order)[0];
-    const orderDirection = order[orderField];
+    const orderDirection = order[orderField]?.toLowerCase() === "asc" ? "ASC" : "DESC";
     const isValidOrderField = validOrderFields.includes(orderField);
 
     const whereClause = {
@@ -201,7 +201,7 @@ const get_all_access = async (req, res) => {
       offset = 0;
 
       whereClause.access_modul = whereClause.access_modul
-        ? { [Sequelize.Op.and]: [whereClause.access_modul, keywordClause] }
+        ? { [Sequelize.Op.or]: [whereClause.access_modul, keywordClause] }
         : keywordClause;
     }
 
