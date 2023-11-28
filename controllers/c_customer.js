@@ -5,10 +5,70 @@ const { v4: uuidv4 } = require("uuid");
 const Sequelize = require('sequelize');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
-// const Joi = require('joi');
+const Joi = require('joi');
+
+const customerSchema = Joi.object({
+    customer_username: Joi.string().required(),
+    customer_full_name: Joi.string().required(),
+    customer_nohp: Joi.string().allow(''),
+    customer_address: Joi.string().allow(''),
+    customer_email: Joi.string().email().required(),
+    customer_password: Joi.string().required(),
+});
+
+const updateCustomerSchema = Joi.object({
+    customer_username: Joi.string(),
+    customer_full_name: Joi.string(),
+    customer_nohp: Joi.string().allow(''),
+    customer_address: Joi.string().allow(''),
+    customer_email: Joi.string().email(),
+    customer_password: Joi.string(),
+}).min(1);
+
+const querySchema = Joi.object({
+    limit: Joi.number().integer().min(1).optional(),
+    page: Joi.number().integer().min(1).optional(),
+    keyword: Joi.string().trim().optional(),
+    filter: Joi.object({
+        customer_username: Joi.alternatives().try(
+            Joi.string().trim(),
+            Joi.array().items(Joi.string().trim())
+        ).optional()
+    }).optional(),
+    order: Joi.object().pattern(
+        Joi.string(), Joi.string().valid('asc', 'desc', 'ASC', 'DESC')
+    ).optional()
+});
+
+const uuidSchema = Joi.object({
+    customer_uuid: Joi.string().guid({ version: 'uuidv4' }).required()
+});
+
+const querySchemaUniqe = Joi.object({
+    field: Joi.string().required().pattern(new RegExp('^[a-zA-Z0-9,_]+$'))
+});
+
+const querySchemaCount = Joi.object({
+    field: Joi.object().pattern(
+        Joi.string(), 
+        Joi.alternatives().try(
+            Joi.string().trim(),
+            Joi.array().items(Joi.string().trim())
+        )
+    ).required()
+});
 
 const post_customer = async (req, res) => {
     try {
+        const { error, value } = customerSchema.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.details[0].message,
+                data: null
+            });
+        }
+
         const {
             customer_username,
             customer_full_name,
@@ -16,21 +76,12 @@ const post_customer = async (req, res) => {
             customer_address,
             customer_email,
             customer_password,
-        } = req.body;
-    
-        if (!customer_username || !customer_full_name || !customer_email || !customer_password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Belum ada data yang diisi',
-                data: null
-            });
-        }
+        } = value;
     
         const customer_uuid = uuidv4();
         
         const hashedPassword = await bcrypt.hash(customer_password, saltRounds);
 
-        // Membuat pelanggan baru
         const create_customer = await tbl_customer.create({
             customer_uuid: customer_uuid,
             customer_username: customer_username,
@@ -86,49 +137,40 @@ const post_customer = async (req, res) => {
 
 const put_customer = async (req, res) =>  {
     try {
-        const {customer_uuid} = req.params;
-        const {
-            customer_username,
-            customer_full_name,
-            customer_nohp,  
-            customer_address,
-            customer_email,
-            customer_password,
-        } = req.body;
+        const customer_uuid = req.params.customer_uuid;
 
-        if (!customer_username || !customer_full_name || !customer_email || !customer_password) {
+        const { error, value } = updateCustomerSchema.validate(req.body);
+        if (error) {
             return res.status(400).json({
                 success: false,
-                message: 'Data harus di isi',
+                message: error.details[0].message,
                 data: null
-            })
+            });
         }
 
         const update_customer = await tbl_customer.findOne({
-            where: {
-                customer_uuid
-            }
-        })
+            where: { customer_uuid }
+        });
 
         if (!update_customer) {
             return res.status(404).json({
                 success: false,
-                message: 'Gagal merubah data',
+                message: 'Pelanggan tidak ditemukan',
                 data: null
-            })
+            });
         }
 
-        const hashedPassword = await bcrypt.hash(customer_password, saltRounds);
+        const hashedPassword = value.customer_password ? await bcrypt.hash(value.customer_password, saltRounds) : update_customer.customer_password;
 
-        update_customer.customer_username = customer_username
-        update_customer.customer_full_name = customer_full_name
-        update_customer.customer_nohp = customer_nohp
-        update_customer.customer_address = customer_address
-        update_customer.customer_email = customer_email
-        update_customer.customer_password = hashedPassword
-        update_customer.customer_update_at = new Date();
-
-        await update_customer.save();
+        await update_customer.update({
+            customer_username: value.customer_username || update_customer.customer_username,
+            customer_full_name: value.customer_full_name || update_customer.customer_full_name,
+            customer_nohp: value.customer_nohp || update_customer.customer_nohp,
+            customer_address: value.customer_address || update_customer.customer_address,
+            customer_email: value.customer_email || update_customer.customer_email,
+            customer_password: hashedPassword,
+            customer_update_at: new Date()
+        });
 
         res.status(200).json({
             success: true,
@@ -155,12 +197,19 @@ const put_customer = async (req, res) =>  {
 
 const delete_customer = async (req, res) => {
     try {
-        const {customer_uuid} = req.params;
+        const { error, value } = uuidSchema.validate(req.params);
+        if (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.details[0].message,
+                data: null
+            });
+        }
+
+        const { customer_uuid } = value;
 
         const delete_customer = await tbl_customer.findOne({
-            where: {
-                customer_uuid
-            },
+            where: { customer_uuid }
         });
 
         if (!delete_customer) {
@@ -193,29 +242,37 @@ const delete_customer = async (req, res) => {
     }
 }
 
-
 const get_detail_customer = async (req, res) => {
     try {
-        const {customer_uuid} = req.params;
+        const { error, value } = uuidSchema.validate(req.params);
+        if (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.details[0].message,
+                data: null
+            });
+        }
+
+        const { customer_uuid } = value;
 
         const detail_customer = await tbl_customer.findOne({
             where: {
                 customer_uuid,
                 customer_delete_at: null
             }
-        })
+        });
 
         if (!detail_customer) {
             return res.status(404).json({
                 success: false,
                 message: 'Gagal Mendapatkan Data',
                 data: null
-            })
+            });
         }
 
         const result = {
             success: true,
-            message: 'Berhasil Mendapatakan Data',
+            message: 'Berhasil Mendapatkan Data',
             data: {
                 customer_username: detail_customer.customer_username,
                 customer_full_name: detail_customer.customer_full_name,
@@ -223,28 +280,37 @@ const get_detail_customer = async (req, res) => {
                 customer_address: detail_customer.customer_address,
                 customer_email: detail_customer.customer_email,
             }
-        }
+        };
 
-        res.status(200).json(result)
+        res.status(200).json(result);
     } catch (error) {
-        console.log(error, 'Data Error')
+        console.log(error, 'Data Error');
         res.status(500).json({
             success: false,
             message: 'Internal Server Error',
             data: null
-        })
+        });
     }
 }
 
 const get_all_customer = async (req, res) => {
     try {
+        const { error, value } = querySchema.validate(req.query);
+        if (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.details[0].message,
+                data: null
+            });
+        }
+
         const {
             limit = null,
             page = null,
             keyword = '',
             filter = {},
-            order = {customer_id: 'desc'}
-        } = req.query;
+            order = { customer_id: 'desc' }
+        } = value;
 
         let offset = limit && page ? (page - 1) * limit : 0;
         const orderField = Object.keys(order)[0];
@@ -352,16 +418,16 @@ const get_all_customer = async (req, res) => {
 
 const get_uniqe_customer = async (req, res) => {
     try {
-        const {field} = req.query;
-
-        if (!field) {
+        const { error, value } = querySchemaUniqe.validate(req.query);
+        if (error) {
             return res.status(400).json({
                 success: false,
-                message: 'Parameter FIELD harus di isikan',
+                message: error.details[0].message,
                 data: null
-            })
+            });
         }
-    
+
+        const { field } = value;
         const fieldsArray = field.split(',');
         const tableAttributes = tbl_customer.rawAttributes;
         const invalidFields = fieldsArray.filter((f) => !(f in tableAttributes));
@@ -406,15 +472,16 @@ const get_uniqe_customer = async (req, res) => {
 
 const get_count_customer = async (req, res) => {
     try {
-        const {field} = req.query;
-    
-        if (!field || typeof field !== 'object') {
-          return res.status(400).json({
-            success: false,
-            message: 'Parameter field harus berupa objek',
-            data: null,
-          });
+        const { error, value } = querySchemaCount.validate(req.query);
+        if (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.details[0].message,
+                data: null
+            });
         }
+
+        const { field } = value;
     
         const counts = {};
     
