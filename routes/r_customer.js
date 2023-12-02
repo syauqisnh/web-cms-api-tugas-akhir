@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const { authenticate, adminOnly } = require('../middleware/authMiddleware');
 
 const {
     post_customer,
@@ -12,10 +13,10 @@ const {
 
 router.post('/customer', post_customer);
 router.put('/customer/:customer_uuid', put_customer);
-router.delete('/customer/:customer_uuid', delete_customer);
-router.get('/customer/get_all', get_all_customer);
-router.get('/customer/get_uniqe', get_uniqe_customer);
-router.get('/customer/get_count', get_count_customer);
-router.get('/customer/:customer_uuid', get_detail_customer);
+router.delete('/customer/:customer_uuid', authenticate, adminOnly, delete_customer);
+router.get('/customer/get_all', authenticate, adminOnly, get_all_customer);
+router.get('/customer/get_uniqe', authenticate, adminOnly, get_uniqe_customer);
+router.get('/customer/get_count', authenticate, adminOnly, get_count_customer);
+router.get('/customer/:customer_uuid', authenticate, adminOnly, get_detail_customer);
 
 module.exports = router;

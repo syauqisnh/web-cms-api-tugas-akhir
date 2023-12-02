@@ -77,6 +77,18 @@ const post_customer = async (req, res) => {
             customer_email,
             customer_password,
         } = value;
+
+        const existingUser = await tbl_customer.findOne({
+            where: { customer_email: customer_email }
+          });
+      
+          if (existingUser) {
+            return res.status(400).json({
+              success: false,
+              message: "Email sudah digunakan, silakan gunakan email lain.",
+              data: null,
+            });
+          }
     
         const customer_uuid = uuidv4();
         
