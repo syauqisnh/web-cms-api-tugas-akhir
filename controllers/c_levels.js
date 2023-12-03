@@ -2,19 +2,65 @@ const db = require("../models");
 const tbl_levels = db.tbl_levels;
 const { v4: uuidv4 } = require("uuid");
 const Sequelize = require("sequelize");
+const Joi = require("joi");
+
+const levelSchema = Joi.object({
+  level_name: Joi.string().required(),
+});
+
+const updateLevelSchema = Joi.object({
+  level_name: Joi.string().required(), 
+});
+
+const uuidSchema = Joi.object({
+  level_uuid: Joi.string().guid({ version: 'uuidv4' }).required()
+});
+
+const querySchema = Joi.object({
+  limit: Joi.number().integer().min(1).optional(),
+  page: Joi.number().integer().min(1).optional(),
+  keyword: Joi.string().trim().optional(),
+  filter: Joi.object({
+      level_name: Joi.alternatives().try(
+          Joi.string().trim(),
+          Joi.array().items(Joi.string().trim())
+      ).optional()
+  }).optional(),
+  order: Joi.object().pattern(
+      Joi.string(), Joi.string().valid('asc', 'desc', 'ASC', 'DESC')
+  ).optional()
+});
+
+const querySchemaUniqe = Joi.object({
+  field: Joi.string().required().pattern(new RegExp('^[a-zA-Z0-9,_]+$'))
+});
+
+const querySchemaCount = Joi.object({
+  field: Joi.object()
+    .pattern(
+      Joi.string(),
+      Joi.alternatives().try(
+        Joi.string().trim(),
+        Joi.array().items(Joi.string().trim())
+      )
+    )
+    .required(),
+});
+
 
 // Untuk CREATE Datanya
 const post_levels = async (req, res) => {
   try {
-    const { level_name } = req.body;
+    const {error, value} = levelSchema.validate(req.body);
 
-    if (!level_name) {
+    if (error) {
       return res.status(400).json({
         success: false,
-        message: "Belum ada data yang di isi",
-        data: null,
-      });
+        message: error.details[0].message,
+        data: null
+      })
     }
+    const { level_name } = value;
     const level_uuid = uuidv4();
 
     const new_levels = await tbl_levels.create({
@@ -51,15 +97,15 @@ const post_levels = async (req, res) => {
 // Untuk Edit Datanya (Perbaikan)
 const put_levels = async (req, res) => {
   try {
-    const { level_uuid } = req.params;
-    const { level_name } = req.body;
+    const level_uuid = req.params.level_uuid;
 
-    if (!level_name) {
+    const {error, value} = updateLevelSchema.validate(req.body);
+    if (error) {
       return res.status(400).json({
         success: false,
-        message: 'Data Harus Di Isi',
+        message: error.details[0].message,
         data: null
-      })
+      });
     }
 
     const update_levels = await tbl_levels.findOne({
@@ -74,11 +120,10 @@ const put_levels = async (req, res) => {
       });
     }
 
-    update_levels.level_name = level_name;
-    await update_levels.save();
-
-    update_levels.level_update_at = new Date();
-    await update_levels.save();
+    await update_levels.update({
+      level_name: value.level_name,
+      level_update_at: new Date()
+    });
 
     res.json({
       success: true,
@@ -90,8 +135,8 @@ const put_levels = async (req, res) => {
       },
     });
   } catch (error) {
-    console.log(error, "Data Error");
-    res.status(402).json({
+    console.error(error, "Data Error");
+    res.status(500).json({
       success: false,
       message: "Internal server error",
       data: null,
@@ -102,9 +147,17 @@ const put_levels = async (req, res) => {
 // Untuk Delete Datanya
 const delete_levels = async (req, res) => {
   try {
-    const { level_uuid } = req.params;
+    const { error, value } = uuidSchema.validate(req.params);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        data: null,
+      });
+    }
 
-    // Mencari entitas level berdasarkan level_uuid
+    const { level_uuid } = value;
+
     const delete_levels = await tbl_levels.findOne({
       where: { level_uuid },
     });
@@ -136,7 +189,16 @@ const delete_levels = async (req, res) => {
 // Untuk Menampilkan datanya berdasarkan UUID
 const get_detail_level = async (req, res) => {
   try {
-    const { level_uuid } = req.params;
+    const { error, value } = uuidSchema.validate(req.params);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        data: null,
+      });
+    }
+
+    const { level_uuid } = value;
 
     const detail_level = await tbl_levels.findOne({
       where: { 
@@ -176,13 +238,22 @@ const get_detail_level = async (req, res) => {
 // Untuk Menampilkan Seluruh Datanya(perbaikan)
 const get_all_levels = async (req, res) => {
   try {
+    const { error, value } = querySchema.validate(req.query);
+    if (error) {
+        return res.status(400).json({
+            success: false,
+            message: error.details[0].message,
+            data: null
+        });
+    }
+
     const {
-      limit = null,
-      keyword = "",
-      page = null,
-      order = { level_id: "desc" },
-      filter = {},
-    } = req.query;
+        limit = null,
+        page = null,
+        keyword = '',
+        filter = {},
+        order = { level_id: 'desc' }
+    } = value;
 
     let offset = limit && page ? (page - 1) * limit : 0;
     const orderField = Object.keys(order)[0];
@@ -289,15 +360,16 @@ const get_all_levels = async (req, res) => {
 // Untuk mendapatkan Data yang uniqe
 const get_unique_levels = async (req, res) => {
   try {
-    const {field} = req.query;
-
-    if (!field) {
-      return res.status(400).json({
-        success: false,
-        message: 'Parameter "field" diperlukan.',
-        data: null,
-      });
+    const { error, value } = querySchemaUniqe.validate(req.query);
+    if (error) {
+        return res.status(400).json({
+            success: false,
+            message: error.details[0].message,
+            data: null
+        });
     }
+
+    const { field } = value;
 
     const fieldsArray = field.split(',');
 
@@ -346,15 +418,16 @@ const get_unique_levels = async (req, res) => {
 
 const get_count_levels = async (req, res) => {
   try {
-    const {field} = req.query;
-
-    if (!field || typeof field !== 'object') {
+    const { error, value } = querySchemaCount.validate(req.query);
+    if (error) {
       return res.status(400).json({
         success: false,
-        message: 'Parameter field harus berupa objek',
+        message: error.details[0].message,
         data: null,
       });
     }
+
+    const { field } = value;
 
     const counts = {};
 

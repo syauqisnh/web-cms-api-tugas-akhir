@@ -10,20 +10,20 @@ const Joi = require('joi');
 const customerSchema = Joi.object({
     customer_username: Joi.string().required(),
     customer_full_name: Joi.string().required(),
-    customer_nohp: Joi.string().allow(''),
+    customer_nohp: Joi.string().allow('').min(10).max(14),
     customer_address: Joi.string().allow(''),
     customer_email: Joi.string().email().required(),
-    customer_password: Joi.string().required(),
+    customer_password: Joi.string().min(8).required(), 
 });
 
 const updateCustomerSchema = Joi.object({
     customer_username: Joi.string(),
     customer_full_name: Joi.string(),
-    customer_nohp: Joi.string().allow(''),
+    customer_nohp: Joi.string().allow('').min(10).max(14),
     customer_address: Joi.string().allow(''),
     customer_email: Joi.string().email(),
-    customer_password: Joi.string(),
-}).min(1);
+    customer_password: Joi.string().min(8),
+});
 
 const querySchema = Joi.object({
     limit: Joi.number().integer().min(1).optional(),

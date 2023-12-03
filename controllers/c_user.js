@@ -10,20 +10,20 @@ const Joi = require("joi");
 const userSchema = Joi.object({
   user_username: Joi.string().required(),
   user_full_name: Joi.string().required(),
-  user_nohp: Joi.string().allow(""),
+  user_nohp: Joi.string().allow("").min(10).max(14),
   user_address: Joi.string().allow(""),
   user_email: Joi.string().email().required(),
-  user_password: Joi.string().required(),
+  user_password: Joi.string().min(8).required(),
 });
 
 const updateuserSchema = Joi.object({
   user_username: Joi.string(),
   user_full_name: Joi.string(),
-  user_nohp: Joi.string().allow(""),
+  user_nohp: Joi.string().allow("").min(10).max(14),
   user_address: Joi.string().allow(""),
   user_email: Joi.string().email(),
-  user_password: Joi.string(),
-}).min(1);
+  user_password: Joi.string().min(8),
+});
 
 const querySchema = Joi.object({
   limit: Joi.number().integer().min(1).optional(),
