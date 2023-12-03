@@ -14,7 +14,7 @@ const {
 router.post('/module', authenticate, adminOnly, post_module);
 router.put('/module/:module_uuid', authenticate, adminOnly, put_module);
 router.delete('/module/:module_uuid', authenticate, adminOnly, delete_module);
-router.get('/module/get_all', authenticate, adminOnly, get_all_module);
+router.get('/module/get_all',  get_all_module);
 router.get('/module/get_unique', authenticate, adminOnly, get_unique_module);
 router.get('/module/get_count', authenticate, adminOnly, get_count_module);
 router.get('/module/:module_uuid', authenticate, adminOnly, get_detail_module);

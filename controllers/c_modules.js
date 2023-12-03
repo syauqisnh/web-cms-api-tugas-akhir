@@ -2,18 +2,64 @@ const db = require("../models");
 const tbl_modules = db.tbl_modules;
 const { v4: uuidv4 } = require("uuid");
 const Sequelize = require("sequelize");
+const Joi = require("joi");
+
+const moduleSchema = Joi.object({
+  module_name: Joi.string().required(),
+});
+
+const updatemoduleSchema = Joi.object({
+  module_name: Joi.string().required(), 
+});
+
+const uuidSchema = Joi.object({
+  module_uuid: Joi.string().guid({ version: 'uuidv4' }).required()
+});
+
+const querySchema = Joi.object({
+  limit: Joi.number().integer().min(1).optional(),
+  page: Joi.number().integer().min(1).optional(),
+  keyword: Joi.string().trim().optional(),
+  filter: Joi.object({
+      module_name: Joi.alternatives().try(
+          Joi.string().trim(),
+          Joi.array().items(Joi.string().trim())
+      ).optional()
+  }).optional(),
+  order: Joi.object().pattern(
+      Joi.string(), Joi.string().valid('asc', 'desc', 'ASC', 'DESC')
+  ).optional()
+});
+
+const querySchemaUniqe = Joi.object({
+  field: Joi.string().required().pattern(new RegExp('^[a-zA-Z0-9,_]+$'))
+});
+
+const querySchemaCount = Joi.object({
+  field: Joi.object()
+    .pattern(
+      Joi.string(),
+      Joi.alternatives().try(
+        Joi.string().trim(),
+        Joi.array().items(Joi.string().trim())
+      )
+    )
+    .required(),
+});
+
 
 const post_module = async (req, res) => {
     try {
-        const {module_name} = req.body;
+      const {error, value} = moduleSchema.validate(req.body);
 
-        if (!module_name) {
-            return res.status(400).json({
-                success: false,
-                message: 'Belum ada data yang di isi',
-                data: null,
-            })
-        }
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          message: error.details[0].message,
+          data: null
+        })
+      }
+        const { module_name } = value;
 
         const module_uuid = uuidv4();
 
@@ -50,16 +96,16 @@ const post_module = async (req, res) => {
 
 const put_module = async (req, res) => {
     try {
-        const {module_uuid} = req.params;
-        const {module_name} = req.body;
+      const module_uuid = req.params.module_uuid;
 
-        if (!module_name) {
-            return res.status(400).json({
-                success: false,
-                message: 'Belum ada data yang di isi',
-                data: null
-            })
-        }
+      const {error, value} = updatemoduleSchema.validate(req.body);
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          message: error.details[0].message,
+          data: null
+        });
+      }
 
         const update_modules = await tbl_modules.findOne({
             where: {
@@ -102,7 +148,16 @@ const put_module = async (req, res) => {
 
 const delete_module = async (req, res) => {
     try {
-        const {module_uuid} = req.params;
+      const { error, value } = uuidSchema.validate(req.params);
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          message: error.details[0].message,
+          data: null,
+        });
+      }
+  
+      const { module_uuid } = value;
         
         const delete_module = await tbl_modules.findOne({
             where: {
@@ -136,13 +191,22 @@ const delete_module = async (req, res) => {
 
 const get_all_module = async (req, res) => {
     try {
-        const {
-            limit = null,
-            keyword = '',
-            page = null,
-            order = {module_id: 'desc'},
-            filter = {}
-        } = req.query;
+      const { error, value } = querySchema.validate(req.query);
+      if (error) {
+          return res.status(400).json({
+              success: false,
+              message: error.details[0].message,
+              data: null
+          });
+      }
+  
+      const {
+          limit = null,
+          page = null,
+          keyword = '',
+          filter = {},
+          order = { module_id: 'desc' }
+      } = value;
     
         let offset = limit && order ? (page - 1) * limit : 0;
         const orderField = Object.keys(order)[0];
@@ -165,7 +229,7 @@ const get_all_module = async (req, res) => {
                     [Sequelize.Op.not]: null
                 }
             } else {
-                console.log("Empty filter.level_name");
+                console.log("Empty filter.module_name");
                 return res.status(404).json({
                   success: false,
                   message: 'Data Tidak Di Temukan'
@@ -248,7 +312,16 @@ const get_all_module = async (req, res) => {
 
 const get_detail_module = async (req, res) => {
     try {
-        const {module_uuid} = req.params;
+      const { error, value } = uuidSchema.validate(req.params);
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          message: error.details[0].message,
+          data: null,
+        });
+      }
+  
+      const { module_uuid } = value;
 
         const detail_module = await tbl_modules.findOne({
             where: {
@@ -287,15 +360,16 @@ const get_detail_module = async (req, res) => {
 
 const get_unique_module = async (req, res) => {
     try {
-        const {field} = req.query;
-    
-        if (!field) {
+      const { error, value } = querySchemaUniqe.validate(req.query);
+      if (error) {
           return res.status(400).json({
-            success: false,
-            message: 'Parameter "field" diperlukan.',
-            data: null,
+              success: false,
+              message: error.details[0].message,
+              data: null
           });
-        }
+      }
+  
+      const { field } = value;
     
         const fieldsArray = field.split(',');
     
@@ -344,15 +418,16 @@ const get_unique_module = async (req, res) => {
 
 const get_count_module = async (req, res) => {
     try {
-        const {field} = req.query;
-    
-        if (!field || typeof field !== 'object') {
-          return res.status(400).json({
-            success: false,
-            message: 'Parameter field harus berupa objek',
-            data: null,
-          });
-        }
+      const { error, value } = querySchemaCount.validate(req.query);
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          message: error.details[0].message,
+          data: null,
+        });
+      }
+  
+      const { field } = value;
     
         const counts = {};
     
