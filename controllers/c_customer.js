@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require("uuid");
 const Sequelize = require('sequelize');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
+const { Op } = require('sequelize');
 const Joi = require('joi');
 
 const customerSchema = Joi.object({
@@ -21,8 +22,8 @@ const updateCustomerSchema = Joi.object({
     customer_full_name: Joi.string(),
     customer_nohp: Joi.string().allow('').min(10).max(14),
     customer_address: Joi.string().allow(''),
-    customer_email: Joi.string().email(),
-    customer_password: Joi.string().min(8),
+    // customer_email: Joi.string().email(),
+    // customer_password: Joi.string().min(8),
 });
 
 const querySchema = Joi.object({
@@ -78,15 +79,20 @@ const post_customer = async (req, res) => {
             customer_password,
         } = value;
 
-        const existingUser = await tbl_customer.findOne({
-            where: { customer_email: customer_email }
+        const existingCustomer = await tbl_customer.findOne({
+            where: { 
+                [Op.or]: [
+                    { customer_email: customer_email },
+                    { customer_nohp: customer_nohp },
+                ], customer_delete_at: null,
+            }
           });
       
-          if (existingUser) {
+          if (existingCustomer) {
             return res.status(400).json({
               success: false,
-              message: "Email sudah digunakan, silakan gunakan email lain.",
-              data: null,
+              message: "Data sudah digunakan, silakan gunakan email lain.",
+              data: existingCustomer,
             });
           }
     
@@ -147,15 +153,37 @@ const post_customer = async (req, res) => {
     }
 }
 
-const put_customer = async (req, res) =>  {
+const put_customer = async (req, res) => {
     try {
         const customer_uuid = req.params.customer_uuid;
-
         const { error, value } = updateCustomerSchema.validate(req.body);
+
         if (error) {
             return res.status(400).json({
                 success: false,
                 message: error.details[0].message,
+                data: null
+            });
+        }
+
+        const existingCustomer = value.customer_email || value.customer_nohp ? await tbl_customer.findOne({
+            where: {
+                [Op.and]: [
+                    {
+                        [Op.or]: [
+                            ...(value.customer_email ? [{ customer_email: value.customer_email }] : []),
+                            ...(value.customer_nohp ? [{ customer_nohp: value.customer_nohp }] : [])
+                        ]
+                    },
+                    { customer_uuid: { [Op.ne]: customer_uuid } }
+                ]
+            }
+        }) : null;
+
+        if (existingCustomer) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email atau nomor telepon sudah digunakan, silakan gunakan yang lain.',
                 data: null
             });
         }
@@ -179,8 +207,7 @@ const put_customer = async (req, res) =>  {
             customer_full_name: value.customer_full_name || update_customer.customer_full_name,
             customer_nohp: value.customer_nohp || update_customer.customer_nohp,
             customer_address: value.customer_address || update_customer.customer_address,
-            customer_email: value.customer_email || update_customer.customer_email,
-            customer_password: hashedPassword,
+            // customer_email: value.customer_email || update_customer.customer_email,
             customer_update_at: new Date()
         });
 
@@ -192,18 +219,18 @@ const put_customer = async (req, res) =>  {
                 customer_full_name: update_customer.customer_full_name,
                 customer_nohp: update_customer.customer_nohp,
                 customer_address: update_customer.customer_address,
-                customer_email: update_customer.customer_email,
+                // customer_email: update_customer.customer_email,
                 customer_create_at: update_customer.customer_create_at,
                 customer_update_at : update_customer.customer_update_at,
             }
-        })
+        });
     } catch (error) {
-        console.log(error, 'Data Error')
+        console.log(error, 'Data Error');
         res.status(500).json({
             success: false,
             message: 'Internal Server Error',
             data: null
-        })
+        });
     }
 }
 
@@ -376,6 +403,7 @@ const get_all_customer = async (req, res) => {
             success: true,
             message: "Sukses mendapatkan data",
             data: data.rows.map((customer) => ({
+                customer_uuid: customer.customer_uuid,
                 customer_username: customer.customer_username,
                 customer_full_name: customer.customer_full_name,
                 customer_nohp: customer.customer_nohp,

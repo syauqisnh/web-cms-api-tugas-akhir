@@ -30,6 +30,7 @@ module.exports = (sequelize, DataTypes) => {
       user_address: DataTypes.STRING,
       user_password: DataTypes.STRING,
       user_level: DataTypes.STRING,
+      user_media: DataTypes.STRING,
       user_create_at: DataTypes.DATE,
       user_update_at: DataTypes.DATE,
       user_delete_at: DataTypes.DATE,

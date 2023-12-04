@@ -8,7 +8,10 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      tbl_business.hasOne(models.tbl_media, {
+        foreignKey: 'media_uuid_table',
+        sourceKey: 'business_uuid',
+      });
     }
   }
   tbl_business.init(
@@ -26,11 +29,11 @@ module.exports = (sequelize, DataTypes) => {
       business_regency: DataTypes.STRING,
       business_subdistrict: DataTypes.STRING,
       business_address: DataTypes.STRING,
-      business_media: DataTypes.STRING,
       business_notelp: DataTypes.STRING,
       business_email: DataTypes.STRING,
       business_link_wa: DataTypes.STRING,
       business_customer: DataTypes.STRING,
+      business_media: DataTypes.STRING,
       business_create_at: DataTypes.DATE,
       business_update_at: DataTypes.DATE,
       business_delete_at: DataTypes.DATE,

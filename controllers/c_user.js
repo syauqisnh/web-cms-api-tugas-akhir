@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require("uuid");
 const Sequelize = require("sequelize");
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
+const { Op } = require("sequelize");
 const Joi = require("joi");
 
 const userSchema = Joi.object({
@@ -81,14 +82,18 @@ const post_user = async (req, res) => {
 
     // Cek apakah email sudah ada di database
     const existingUser = await tbl_user.findOne({
-      where: { user_email: user_email }
+      where: {
+        [Op.or]: [{ user_email: user_email }, { user_nohp: user_nohp }],
+        user_delete_at: null,
+      },
     });
 
     // Jika email sudah ada, kirim respons error
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "Email sudah digunakan, silakan gunakan email lain.",
+        message:
+          "Email atau nomor HP sudah digunakan, silakan gunakan yang lain.",
         data: null,
       });
     }
@@ -102,8 +107,8 @@ const post_user = async (req, res) => {
       user_username: user_username,
       user_full_name: user_full_name,
       user_nohp: user_nohp,
-      user_address: user_address,
       user_email: user_email,
+      user_address: user_address,
       user_password: hashedPassword,
     });
 
@@ -135,8 +140,8 @@ const post_user = async (req, res) => {
         user_username: create_user.user_username,
         user_full_name: create_user.user_full_name,
         user_nohp: create_user.user_nohp,
-        user_address: create_user.user_address,
         user_email: create_user.user_email,
+        user_address: create_user.user_address,
       },
     });
   } catch (error) {
@@ -147,12 +152,42 @@ const post_user = async (req, res) => {
 const put_user = async (req, res) => {
   try {
     const user_uuid = req.params.user_uuid;
-
     const { error, value } = updateuserSchema.validate(req.body);
+
     if (error) {
       return res.status(400).json({
         success: false,
         message: error.details[0].message,
+        data: null,
+      });
+    }
+
+    const existinguser =
+      value.user_email || value.user_nohp
+        ? await tbl_user.findOne({
+            where: {
+              [Op.and]: [
+                {
+                  [Op.or]: [
+                    ...(value.user_email
+                      ? [{ user_email: value.user_email }]
+                      : []),
+                    ...(value.user_nohp
+                      ? [{ user_nohp: value.user_nohp }]
+                      : []),
+                  ],
+                },
+                { user_uuid: { [Op.ne]: user_uuid } },
+              ],
+            },
+          })
+        : null;
+
+    if (existinguser) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Email atau nomor telepon sudah digunakan, silakan gunakan yang lain.",
         data: null,
       });
     }
@@ -178,8 +213,7 @@ const put_user = async (req, res) => {
       user_full_name: value.user_full_name || update_user.user_full_name,
       user_nohp: value.user_nohp || update_user.user_nohp,
       user_address: value.user_address || update_user.user_address,
-      user_email: value.user_email || update_user.user_email,
-      user_password: hashedPassword,
+      // user_email: value.user_email || update_user.user_email,
       user_update_at: new Date(),
     });
 
@@ -191,7 +225,7 @@ const put_user = async (req, res) => {
         user_full_name: update_user.user_full_name,
         user_nohp: update_user.user_nohp,
         user_address: update_user.user_address,
-        user_email: update_user.user_email,
+        // user_email: update_user.user_email,
         user_create_at: update_user.user_create_at,
         user_update_at: update_user.user_update_at,
       },
@@ -375,6 +409,7 @@ const get_all_user = async (req, res) => {
       success: true,
       message: "Sukses mendapatkan data",
       data: data.rows.map((user) => ({
+        user_uuid: user.user_uuid,
         user_username: user.user_username,
         user_full_name: user.user_full_name,
         user_nohp: user.user_nohp,

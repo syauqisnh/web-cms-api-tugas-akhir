@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const { authenticate } = require('../middleware/authMiddleware');
 
 const {
     post_business,
@@ -10,7 +11,7 @@ const {
     get_count_business,
 } = require('../controllers/c_business');
 
-router.post('/business', post_business);
+router.post('/business',authenticate, post_business);
 router.put('/business/:business_uuid', put_business);
 router.delete('/business/:business_uuid', delete_business);
 router.get('/business/get_all', get_all_business);
