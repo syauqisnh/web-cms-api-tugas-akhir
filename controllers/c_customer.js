@@ -1,6 +1,7 @@
 const db = require('../models');
 const tbl_customer = db.tbl_customer;
 const tbl_media = db.tbl_media;
+const tbl_levels = db.tbl_levels;
 const { v4: uuidv4 } = require("uuid");
 const Sequelize = require('sequelize');
 const bcrypt = require('bcrypt');
@@ -14,7 +15,7 @@ const customerSchema = Joi.object({
     customer_nohp: Joi.string().allow('').min(10).max(14),
     customer_address: Joi.string().allow(''),
     customer_email: Joi.string().email().required(),
-    customer_password: Joi.string().min(8).required(), 
+    customer_password: Joi.string().min(8).required(),
 });
 
 const updateCustomerSchema = Joi.object({
@@ -86,19 +87,32 @@ const post_customer = async (req, res) => {
                     { customer_nohp: customer_nohp },
                 ], customer_delete_at: null,
             }
-          });
+        });
       
-          if (existingCustomer) {
+        if (existingCustomer) {
             return res.status(400).json({
-              success: false,
-              message: "Data sudah digunakan, silakan gunakan email lain.",
-              data: existingCustomer,
+                success: false,
+                message: "Data sudah digunakan, silakan gunakan email lain.",
+                data: existingCustomer,
             });
-          }
-    
+        }
+
         const customer_uuid = uuidv4();
-        
         const hashedPassword = await bcrypt.hash(customer_password, saltRounds);
+
+        const level = await tbl_levels.findOne({
+            where: { level_name: "customer" }
+        });
+
+        if (!level) {
+            return res.status(404).json({
+                success: false,
+                message: "Level customer tidak ditemukan",
+                data: null
+            });
+        }
+
+        const customerLevelUuid = level.level_uuid;
 
         const create_customer = await tbl_customer.create({
             customer_uuid: customer_uuid,
@@ -108,8 +122,9 @@ const post_customer = async (req, res) => {
             customer_address: customer_address,
             customer_email: customer_email,
             customer_password: hashedPassword,
+            customer_level: customerLevelUuid, // Menetapkan level_uuid ke customer
         });
-    
+
         if (!create_customer) {
             return res.status(404).json({
                 success: false,
@@ -152,6 +167,7 @@ const post_customer = async (req, res) => {
         });
     }
 }
+
 
 const put_customer = async (req, res) => {
     try {
@@ -298,7 +314,14 @@ const get_detail_customer = async (req, res) => {
             where: {
                 customer_uuid,
                 customer_delete_at: null
-            }
+            },
+            include: [
+                {
+                    model: tbl_levels,
+                    as: 'customer_level_as',
+                    attributes: ['level_uuid', 'level_name']
+                }
+            ]
         });
 
         if (!detail_customer) {
@@ -318,6 +341,11 @@ const get_detail_customer = async (req, res) => {
                 customer_nohp: detail_customer.customer_nohp,
                 customer_address: detail_customer.customer_address,
                 customer_email: detail_customer.customer_email,
+                customer_level: detail_customer.customer_level_as
+                ? {
+                    level_uuid: detail_customer.customer_level_as.level_uuid,
+                    level_name: detail_customer.customer_level_as.level_name
+                } : null,
             }
         };
 
@@ -395,6 +423,13 @@ const get_all_customer = async (req, res) => {
             order: [[orderField, orderDirection]],
             limit: limit ? parseInt(limit) : null,
             offset: offset ? parseInt(offset) : null,
+            include: [
+                {
+                    model: tbl_levels,
+                    as: 'customer_level_as',
+                    attributes: ['level_uuid', 'level_name']
+                }
+            ]
           });
           
           const totalPages = limit ? Math.ceil(data.count / (limit || 1)) : 1;
@@ -409,6 +444,11 @@ const get_all_customer = async (req, res) => {
                 customer_nohp: customer.customer_nohp,
                 customer_address: customer.customer_address,
                 customer_email: customer.customer_email,
+                customer_level: customer.customer_level_as
+                ? {
+                    level_uuid: customer.customer_level_as.level_uuid,
+                    level_name: customer.customer_level_as.level_name
+                } : null,
             })),
             pages: {
               total: data.count,

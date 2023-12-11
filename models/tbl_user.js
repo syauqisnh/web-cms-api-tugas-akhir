@@ -12,6 +12,13 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'media_uuid_table',
         sourceKey: 'user_uuid',
       });
+
+      
+      tbl_user.belongsTo(models.tbl_levels, {
+        foreignKey: 'user_level',
+        targetKey: 'level_uuid', 
+        as: "user_level_as",
+      });
     }
   }
   tbl_user.init(

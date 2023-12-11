@@ -12,6 +12,18 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'media_uuid_table',
         sourceKey: 'business_uuid',
       });
+
+      tbl_business.belongsTo(models.tbl_customer, {
+        foreignKey: "business_customer",
+        targetKey: "customer_uuid",
+        as: "business_customer_as",
+      });
+
+      tbl_business.belongsTo(models.tbl_media, {
+        foreignKey: "business_media",
+        targetKey: "media_uuid",
+        as: "business_media_as",
+      });
     }
   }
   tbl_business.init(

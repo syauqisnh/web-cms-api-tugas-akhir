@@ -1,6 +1,7 @@
 const db = require("../models");
 const tbl_user = db.tbl_user;
 const tbl_customer = db.tbl_customer;
+const tbl_levels = db.tbl_levels;
 const tbl_media = db.tbl_media;
 const bcrypt = require("bcrypt");
 const Joi = require('joi');
@@ -69,14 +70,14 @@ const Me = async (req, res) =>{
     }
     try {
         const user = await tbl_customer.findOne({
-            attributes:['customer_username'],
+            attributes:['customer_uuid', 'customer_username'],
             where: {
                 customer_uuid: req.session.userUuid
             }
             });
             
             const user_admin = await tbl_user.findOne({
-                attributes:['user_username'],
+                attributes:['user_uuid', 'user_username'],
                 where: {
                     user_uuid: req.session.userUuid
                 }
@@ -84,17 +85,19 @@ const Me = async (req, res) =>{
         if (!user && !user_admin) { 
             return res.status(404).json({ msg: "User tidak ditemukan" });
         } else if (user_admin) {
+            const uuid = user_admin['user_uuid'];
             const name = user_admin['user_username'];
             const level = 'admin';
-            res.status(200).json({ name, level,});
+            res.status(200).json({ uuid, name, level,});
         } else if (user) {
+            const uuid = user['customer_uuid'];
             const name = user['customer_username'];
             const level = 'customer';
-            res.status(200).json({ name, level,});
+            res.status(200).json({ uuid, name, level,});
         }
     } catch (error) {
         console.error(error);
-        res.status(500).json({ msg: "Terjadi kesalahan pada server" });
+        res.status(500).json({ msg: "Terjadi kesalahan pada server", error });
     }
 }
 
@@ -139,12 +142,27 @@ const registrasi_customer = async (req, res) => {
       
       const hashedPassword = await bcrypt.hash(customer_password, saltRounds);
 
+      const level = await tbl_levels.findOne({
+        where: { level_name: "customer" }
+    });
+
+    if (!level) {
+        return res.status(404).json({
+            success: false,
+            message: "Level customer tidak ditemukan",
+            data: null
+        });
+    }
+
+      const customerLevelUuid = level.level_uuid;
+
       const create_customer = await tbl_customer.create({
           customer_uuid: customer_uuid,
           customer_username: customer_username,
           customer_full_name: customer_full_name,
           customer_email: customer_email,
           customer_password: hashedPassword,
+          customer_level: customerLevelUuid,
       });
   
       if (!create_customer) {

@@ -24,6 +24,7 @@ module.exports = (sequelize, DataTypes) => {
       team_job_desc: DataTypes.STRING,
       team_scope: DataTypes.STRING,
       team_business: DataTypes.STRING,
+      team_media: DataTypes.STRING,
       team_create_at: DataTypes.DATE,
       team_update_at: DataTypes.DATE,
       team_delete_at: DataTypes.DATE,
@@ -34,6 +35,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "tbl_teams",
+      tableName: "tbl_teams",
       timestamps: false,
     }
   );

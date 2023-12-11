@@ -1,6 +1,7 @@
 const db = require("../models");
 const tbl_user = db.tbl_user;
 const tbl_media = db.tbl_media;
+const tbl_levels = db.tbl_levels;
 const { v4: uuidv4 } = require("uuid");
 const Sequelize = require("sequelize");
 const bcrypt = require("bcrypt");
@@ -102,6 +103,20 @@ const post_user = async (req, res) => {
     const user_uuid = uuidv4();
     const hashedPassword = await bcrypt.hash(user_password, saltRounds);
 
+    const level = await tbl_levels.findOne({
+      where: { level_name: "administrator" }
+    });
+
+    if (!level) {
+      return res.status(404).json({
+          success: false,
+          message: "Level customer tidak ditemukan",
+          data: null
+      });
+    }
+
+    const customerLevelUuid = level.level_uuid;
+
     const create_user = await tbl_user.create({
       user_uuid: user_uuid,
       user_username: user_username,
@@ -110,6 +125,7 @@ const post_user = async (req, res) => {
       user_email: user_email,
       user_address: user_address,
       user_password: hashedPassword,
+      user_level: customerLevelUuid
     });
 
     if (!create_user) {
@@ -401,6 +417,13 @@ const get_all_user = async (req, res) => {
       order: [[orderField, orderDirection]],
       limit: limit ? parseInt(limit) : null,
       offset: offset ? parseInt(offset) : null,
+      include: [
+        {
+            model: tbl_levels,
+            as: 'user_level_as',
+            attributes: ['level_uuid', 'level_name']
+        }
+    ]
     });
 
     const totalPages = limit ? Math.ceil(data.count / (limit || 1)) : 1;
@@ -415,6 +438,11 @@ const get_all_user = async (req, res) => {
         user_nohp: user.user_nohp,
         user_address: user.user_address,
         user_email: user.user_email,
+        user_level: user.user_level_as
+        ? {
+            level_uuid: user.user_level_as.level_uuid,
+            level_name: user.user_level_as.level_name
+        } : null,
       })),
       pages: {
         total: data.count,
