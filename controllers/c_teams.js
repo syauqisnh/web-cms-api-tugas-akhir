@@ -7,8 +7,16 @@ const Sequelize = require("sequelize");
 // const Joi = require("joi");
 // const { Op } = require("sequelize");
 
+// const teamsSchema = Joi.object({
+//     team_name: Joi.string().required(),
+//     team_job_desc: Joi.string().required(),
+//     team_scope: Joi.string().required(),
+//     team_business: Joi.string().required(),
+//     team_media: Joi.string().guid({ version: "uuidv4" }).required(),
+//   });
+
 const post_teams = async (req, res) => {
-    
+
 };
 
 const put_teams = async (req, res) => {
