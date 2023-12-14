@@ -37,7 +37,7 @@ const querySchema = Joi.object({
 });
 
 const querySchemaByCustomer = Joi.object({
-  business_customer: Joi.string().guid({ version: "uuidv4" }).optional(),
+  scope_business: Joi.string().guid({ version: "uuidv4" }).optional(),
   limit: Joi.number().integer().min(1).optional(),
   page: Joi.number().integer().min(1).optional(),
   keyword: Joi.string().trim().optional(),
@@ -314,7 +314,7 @@ const get_all_scope = async (req, res) => {
               {
                 model: tbl_business,
                 as: 'scope_business_as',
-                attributes: ['business_uuid', 'business_name', 'business_desc', 'business_province', 'business_regency', 'business_subdistrict', 'business_address'],
+                attributes: ['business_uuid', 'business_name', 'business_desc', 'business_province', 'business_regency', 'business_subdistrict', 'business_address', 'business_customer'],
               },
             ]
           });
@@ -337,6 +337,7 @@ const get_all_scope = async (req, res) => {
                   business_regency: scope.scope_business_as.business_regency,
                   business_subdistrict: scope.scope_business_as.business_subdistrict,
                   business_address: scope.scope_business_as.business_address,
+                  business_customer: scope.scope_business_as.business_customer,
                 }
               : null,
             })),
@@ -569,7 +570,7 @@ const get_count_scope = async (req, res) => {
 
 const get_scope_byCustomer = async (req, res) => {
   try {
-    const { error, value } = querySchema.validate(req.query);
+    const { error, value } = querySchemaByCustomer.validate(req.query);
         if (error) {
             return res.status(400).json({
                 success: false,
@@ -579,6 +580,7 @@ const get_scope_byCustomer = async (req, res) => {
         }
 
         const {
+            scope_business = null,
             limit = null,
             page = null,
             keyword = '',
@@ -591,6 +593,7 @@ const get_scope_byCustomer = async (req, res) => {
         const orderDirection = order[orderField]?.toLowerCase() === "asc" ? "ASC" : "DESC";
 
         const whereClause = {
+            scope_business: scope_business,
             scope_delete_at: null,
         }
 
@@ -634,7 +637,7 @@ const get_scope_byCustomer = async (req, res) => {
               {
                 model: tbl_business,
                 as: 'scope_business_as',
-                attributes: ['business_uuid', 'business_name', 'business_desc', 'business_province', 'business_regency', 'business_subdistrict', 'business_address'],
+                attributes: ['business_uuid', 'business_name', 'business_desc', 'business_province', 'business_regency', 'business_subdistrict', 'business_address', 'business_customer'],
               },
             ]
           });
@@ -657,6 +660,7 @@ const get_scope_byCustomer = async (req, res) => {
                   business_regency: scope.scope_business_as.business_regency,
                   business_subdistrict: scope.scope_business_as.business_subdistrict,
                   business_address: scope.scope_business_as.business_address,
+                  business_customer: scope.scope_business_as.business_customer,
                 }
               : null,
             })),
