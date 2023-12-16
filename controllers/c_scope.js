@@ -209,7 +209,6 @@ const put_scope = async (req, res) => {
   }
 };
 
-
 const delete_scope = async (req, res) => {
   try {
     const { error, value } = uuidSchema.validate(req.params);

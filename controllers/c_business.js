@@ -164,7 +164,7 @@ const post_business = async (req, res) => {
     if (!create_business) {
       return res.status(404).json({
         success: false,
-        message: "Gagal menambahkan data bisnis",
+        message: "Gagal menambahkan data",
         data: null,
       });
     } else {

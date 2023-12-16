@@ -102,8 +102,6 @@ const post_upload_media = async (req, res) => {
   });
 };
 
-
-
 const get_all_media = async (req, res) => {
   try {
     const {

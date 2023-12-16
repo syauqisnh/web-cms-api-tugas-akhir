@@ -8,7 +8,16 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      tbl_teams.hasOne(models.tbl_media, {
+        foreignKey: 'media_uuid_table',
+        sourceKey: 'team_uuid',
+      });
+
+      tbl_teams.belongsTo(models.tbl_scopes, {
+        foreignKey: 'team_scope',
+        targetKey: 'scope_uuid', 
+        as: "team_scope_as",
+      });
     }
   }
   tbl_teams.init(

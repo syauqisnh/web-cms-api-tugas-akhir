@@ -87,7 +87,7 @@ const Me = async (req, res) =>{
         } else if (user_admin) {
             const uuid = user_admin['user_uuid'];
             const name = user_admin['user_username'];
-            const level = 'admin';
+            const level = 'administrator';
             res.status(200).json({ uuid, name, level,});
         } else if (user) {
             const uuid = user['customer_uuid'];
