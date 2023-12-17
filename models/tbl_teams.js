@@ -13,6 +13,12 @@ module.exports = (sequelize, DataTypes) => {
         sourceKey: 'team_uuid',
       });
 
+      tbl_teams.belongsTo(models.tbl_business, {
+        foreignKey: 'team_business',
+        targetKey: 'business_uuid', 
+        as: "team_business_as",
+      });
+
       tbl_teams.belongsTo(models.tbl_scopes, {
         foreignKey: 'team_scope',
         targetKey: 'scope_uuid', 
