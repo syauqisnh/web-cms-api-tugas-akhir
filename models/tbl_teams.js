@@ -24,6 +24,12 @@ module.exports = (sequelize, DataTypes) => {
         targetKey: 'scope_uuid', 
         as: "team_scope_as",
       });
+
+      tbl_teams.belongsTo(models.tbl_media, {
+        foreignKey: 'team_media',
+        targetKey: 'media_uuid', 
+        as: "team_media_as",
+      });
     }
   }
   tbl_teams.init(
