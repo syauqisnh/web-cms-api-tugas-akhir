@@ -40,6 +40,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "tbl_price_list",
+      tableName: "tbl_price_list",
       timestamps: false,
     }
   );

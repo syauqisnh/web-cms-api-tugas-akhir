@@ -10,6 +10,7 @@ const r_user = require('./r_user');
 const r_business = require('./r_business');
 const r_teams = require('./r_teams');
 const r_scope = require('./r_scope');
+const r_price_list = require('./r_price_list');
 
 router.use("/api/v1", r_auth);
 router.use("/api/v1", r_levels);
@@ -22,5 +23,6 @@ router.use('/api/v1', r_user);
 router.use('/api/v1', r_business);
 router.use('/api/v1', r_teams);
 router.use('/api/v1', r_scope);
+router.use('/api/v1', r_price_list);
 
 module.exports = router;
