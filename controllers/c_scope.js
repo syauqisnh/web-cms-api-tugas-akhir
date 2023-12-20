@@ -170,6 +170,7 @@ const put_scope = async (req, res) => {
         where: {
           scope_business: value.scope_business,
           scope_uuid: { [Op.ne]: scope_uuid },
+          scope_delete_at: null
         },
       });
 

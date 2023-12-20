@@ -207,7 +207,9 @@ const put_teams = async (req, res) => {
     }
 
     const update_teams = await tbl_teams.findOne({
-      where: { team_uuid },
+      where: { 
+        team_uuid,
+      },
     });
 
     if (!update_teams) {
@@ -250,6 +252,7 @@ const put_teams = async (req, res) => {
               team_uuid: { [Op.ne]: team_uuid },
             },
           ],
+          team_delete_at: null,
         },
       });
     
