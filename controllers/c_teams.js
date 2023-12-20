@@ -98,7 +98,7 @@ const post_teams = async (req, res) => {
     if (!businessValid) {
       return res.status(400).json({
         success: false,
-        message: "UUID bisnis tidak ditemukan",
+        message: "Data tidak ditemukan",
         data: null,
       });
     }
@@ -113,7 +113,7 @@ const post_teams = async (req, res) => {
     if (!scopesValid) {
       return res.status(400).json({
         success: false,
-        message: "UUID scope tidak terkait dengan UUID bisnis yang diberikan",
+        message: "Data tidak berkaitan",
         data: null,
       });
     }
@@ -213,7 +213,7 @@ const put_teams = async (req, res) => {
     if (!update_teams) {
       return res.status(404).json({
         success: false,
-        message: "Team tidak ditemukan",
+        message: "Gagal merubah data",
         data: null,
       });
     }
@@ -229,7 +229,7 @@ const put_teams = async (req, res) => {
     if (!scopesValid) {
       return res.status(400).json({
         success: false,
-        message: "UUID scope tidak terkait dengan UUID bisnis yang diberikan",
+        message: "Data tidak berkaitan",
         data: null,
       });
     }
@@ -256,7 +256,7 @@ const put_teams = async (req, res) => {
       if (existingTeams) {
         return res.status(400).json({
           success: false,
-          message: "Bisnis atau Scope Sudah di Gunakan",
+          message: "Data Sudah di Gunakan",
           data: null,
         });
       }

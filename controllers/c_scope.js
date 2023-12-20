@@ -87,7 +87,7 @@ const post_scope = async (req, res) => {
     if (!businessValid) {
       return res.status(400).json({
         success: false,
-        message: "UUID tidak terdapat di tabel referensi",
+        message: "Data tidak ditemukan",
         data: null,
       });
     }
@@ -99,7 +99,7 @@ const post_scope = async (req, res) => {
     if (existingScope) {
       return res.status(400).json({
         success: false,
-        message: "Business UUID sudah digunakan",
+        message: "Data sudah digunakan",
         data: null,
       });
     }
@@ -176,7 +176,7 @@ const put_scope = async (req, res) => {
       if (existingScope) {
         return res.status(400).json({
           success: false,
-          message: "Bisnis Sudah di Gunakan",
+          message: "Data Sudah di Gunakan",
           data: null,
         });
       }
