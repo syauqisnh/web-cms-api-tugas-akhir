@@ -34,26 +34,26 @@ module.exports = {
       price_list_media: {
         type: Sequelize.STRING
       },
-      paket_harga_create_at: {
+      price_list_create_at: {
         allowNull: false,
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal("CURRENT_TIMESTAMP")
       },
-      paket_harga_update_at: {
+      price_list_update_at: {
         allowNull: true,
         type: Sequelize.DATE
       },
-      paket_harga_delete_at: {
+      price_list_delete_at: {
         allowNull: true,
         type: Sequelize.DATE
       },
-      paket_harga_create_by: {
+      price_list_create_by: {
         type: Sequelize.STRING
       },
-      paket_harga_update_by: {
+      price_list_update_by: {
         type: Sequelize.STRING
       },
-      paket_harga_delete_by: {
+      price_list_delete_by: {
         type: Sequelize.STRING
       },
     }, {
