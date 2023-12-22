@@ -14,7 +14,7 @@ const priceSchema = Joi.object({
   price_list_status: Joi.string().valid("Y", "N").default("N").required(),
   price_list_order: Joi.string().required(),
   price_list_business: Joi.string().required(),
-  // price_list_media: Joi.string().required(),
+  price_list_media: Joi.string().required(),
 });
 
 const priceSchemaUpdate = Joi.object({
@@ -27,11 +27,53 @@ const priceSchemaUpdate = Joi.object({
 });
 
 const uuidSchema = Joi.object({
-    price_list_uuid: Joi.string().guid({ version: "uuidv4" }).required(),
+  price_list_uuid: Joi.string().guid({ version: "uuidv4" }).required(),
 });
 
+const querySchema = Joi.object({
+  limit: Joi.number().integer().min(1).optional(),
+  page: Joi.number().integer().min(1).optional(),
+  keyword: Joi.string().trim().optional(),
+  filter: Joi.object({
+    price_list_name: Joi.alternatives()
+      .try(Joi.string().trim(), Joi.array().items(Joi.string().trim()))
+      .optional(),
+  }).optional(),
+  order: Joi.object()
+    .pattern(Joi.string(), Joi.string().valid("asc", "desc", "ASC", "DESC"))
+    .optional(),
+});
 
-  
+const querySchemaByBusiness = Joi.object({
+    price_list_business: Joi.string().guid({ version: "uuidv4" }).optional(),
+    limit: Joi.number().integer().min(1).optional(),
+    page: Joi.number().integer().min(1).optional(),
+    keyword: Joi.string().trim().optional(),
+    filter: Joi.object({
+      price_list_name: Joi.alternatives()
+        .try(Joi.string().trim(), Joi.array().items(Joi.string().trim()))
+        .optional(),
+    }).optional(),
+    order: Joi.object()
+      .pattern(Joi.string(), Joi.string().valid("asc", "desc", "ASC", "DESC"))
+      .optional(),
+  });
+
+const querySchemaUniqe = Joi.object({
+  field: Joi.string().required().pattern(new RegExp("^[a-zA-Z0-9,_]+$")),
+});
+
+const querySchemaCount = Joi.object({
+  field: Joi.object()
+    .pattern(
+      Joi.string(),
+      Joi.alternatives().try(
+        Joi.string().trim(),
+        Joi.array().items(Joi.string().trim())
+      )
+    )
+    .required(),
+});
 
 const post_price_list = async (req, res) => {
   try {
@@ -52,6 +94,7 @@ const post_price_list = async (req, res) => {
       price_list_status,
       price_list_order,
       price_list_business,
+      price_list_media
     } = value;
 
     const businessValid = await tbl_business.findOne({
@@ -96,26 +139,47 @@ const post_price_list = async (req, res) => {
     });
 
     if (!create_price_list) {
-      return res.status(404).json({
-        success: false,
-        message: "Gagal menambahkan data",
-        data: null,
+        return res.status(404).json({
+          success: false,
+          message: "Gagal menambahkan data",
+          data: null,
+        });
+      } else {
+  
+      const update_media = await tbl_media.findOne({
+        where: {
+          media_uuid : price_list_media
+        },
       });
+  
+      if (!update_media) {
+        return res.status(404).json({
+          success: false,
+          message: "Bisnis tidak ditemukan",
+          data: null,
+        });
+      }else{
+        await update_media.update({
+          media_uuid_table: price_list_uuid || update_media.media_uuid_table,
+          media_table: "price_list" || update_media.media_table,
+          price_list_update_at: new Date()
+        })
+  
+        res.status(200).json({
+          success: true,
+          message: "Berhasil menambahkan data bisnis",
+          data: {
+            price_list_uuid: create_price_list.price_list_uuid,
+            price_list_name: create_price_list.price_list_name,
+            price_list_price: create_price_list.price_list_price,
+            price_list_desc: create_price_list.price_list_desc,
+            price_list_status: create_price_list.price_list_status,
+            price_list_order: create_price_list.price_list_order,
+            price_list_business: create_price_list.price_list_business,
+          },
+        });
+      }
     }
-
-    res.status(200).json({
-      success: true,
-      message: "Sukses menambahkan data",
-      data: {
-        price_list_uuid: create_price_list.price_list_uuid,
-        price_list_name: create_price_list.price_list_name,
-        price_list_price: create_price_list.price_list_price,
-        price_list_desc: create_price_list.price_list_desc,
-        price_list_status: create_price_list.price_list_status,
-        price_list_order: create_price_list.price_list_order,
-        price_list_business: create_price_list.price_list_business,
-      },
-    });
   } catch (error) {
     console.log(error, "Data Error");
     res.status(500).json({
@@ -151,47 +215,56 @@ const put_price_list = async (req, res) => {
       });
     }
 
-    if (value.price_list_business && value.price_list_business !== update_price_list.price_list_business) {
-        const existingPrice = await tbl_price_list.findOne({
-          where: {
-            price_list_business: value.price_list_business,
-            price_list_uuid: { [Op.ne]: price_list_uuid },
-            price_list_delete_at: null
-          },
-        });
-  
-        if (existingPrice) {
-          return res.status(400).json({
-            success: false,
-            message: "Data Sudah di Gunakan",
-            data: null,
-          });
-        }
-      }
-
-      await update_price_list.update({
-        price_list_name: value.price_list_name|| update_price_list.price_list_name,
-        price_list_price: value.price_list_price || update_price_list.price_list_price,
-        price_list_desc: value.price_list_desc || update_price_list.price_list_desc,
-        price_list_status: value.price_list_status || update_price_list.price_list_status,
-        price_list_order: value.price_list_order || update_price_list.price_list_order,
-        price_list_business: value.price_list_business || update_price_list.price_list_business,
-        price_list_update_at: new Date(),
-      });
-
-      res.status(200).json({
-        success: true,
-        message: "Berhasil merubah data",
-        data: {
-          price_list_uuid: update_price_list.price_list_uuid,
-          price_list_name: update_price_list.price_list_name,
-          price_list_price: update_price_list.price_list_price,
-          price_list_desc: update_price_list.price_list_desc,
-          price_list_status: update_price_list.price_list_status,
-          price_list_order: update_price_list.price_list_order,
-          price_list_business: update_price_list.price_list_business,
+    if (
+      value.price_list_business &&
+      value.price_list_business !== update_price_list.price_list_business
+    ) {
+      const existingPrice = await tbl_price_list.findOne({
+        where: {
+          price_list_business: value.price_list_business,
+          price_list_uuid: { [Op.ne]: price_list_uuid },
+          price_list_delete_at: null,
         },
       });
+
+      if (existingPrice) {
+        return res.status(400).json({
+          success: false,
+          message: "Data Sudah di Gunakan",
+          data: null,
+        });
+      }
+    }
+
+    await update_price_list.update({
+      price_list_name:
+        value.price_list_name || update_price_list.price_list_name,
+      price_list_price:
+        value.price_list_price || update_price_list.price_list_price,
+      price_list_desc:
+        value.price_list_desc || update_price_list.price_list_desc,
+      price_list_status:
+        value.price_list_status || update_price_list.price_list_status,
+      price_list_order:
+        value.price_list_order || update_price_list.price_list_order,
+      price_list_business:
+        value.price_list_business || update_price_list.price_list_business,
+      price_list_update_at: new Date(),
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Berhasil merubah data",
+      data: {
+        price_list_uuid: update_price_list.price_list_uuid,
+        price_list_name: update_price_list.price_list_name,
+        price_list_price: update_price_list.price_list_price,
+        price_list_desc: update_price_list.price_list_desc,
+        price_list_status: update_price_list.price_list_status,
+        price_list_order: update_price_list.price_list_order,
+        price_list_business: update_price_list.price_list_business,
+      },
+    });
   } catch (error) {
     console.log(error, "Data Error");
     res.status(500).json({
@@ -245,27 +318,525 @@ const delete_price_list = async (req, res) => {
 
 const get_detail_price_list = async (req, res) => {
   try {
-  } catch (error) {}
+    const { error, value } = uuidSchema.validate(req.params);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        data: null,
+      });
+    }
+
+    const { price_list_uuid } = value;
+
+    const detail_price_list = await tbl_price_list.findOne({
+      where: {
+        price_list_uuid,
+        price_list_delete_at: null,
+      },
+      include: [
+        {
+          model: tbl_business,
+          as: "price_business_as",
+          attributes: [
+            "business_uuid",
+            "business_name",
+            "business_desc",
+            "business_province",
+            "business_regency",
+            "business_subdistrict",
+            "business_address",
+          ],
+        },
+      ],
+    });
+
+    if (!detail_price_list) {
+      return res.status(404).json({
+        success: false,
+        message: "Gagal Mendapatkan Data",
+        data: null,
+      });
+    }
+
+    const result = {
+      success: true,
+      message: "Berhasil Mendapatkan Data",
+      data: {
+        price_list_uuid: detail_price_list.price_list_uuid,
+        price_list_name: detail_price_list.price_list_name,
+        price_list_price: detail_price_list.price_list_price,
+        price_list_desc: detail_price_list.price_list_desc,
+        price_list_status: detail_price_list.price_list_status,
+        price_list_order: detail_price_list.price_list_order,
+        price_list_business: detail_price_list.price_business_as
+          ? {
+              business_uuid: detail_price_list.price_business_as.business_uuid,
+              business_name: detail_price_list.price_business_as.business_name,
+              business_desc: detail_price_list.price_business_as.business_desc,
+              business_province:
+                detail_price_list.price_business_as.business_province,
+              business_regency:
+                detail_price_list.price_business_as.business_regency,
+              business_subdistrict:
+                detail_price_list.price_business_as.business_subdistrict,
+              business_address:
+                detail_price_list.price_business_as.business_address,
+            }
+          : null,
+      },
+    };
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error, "Data Error");
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      data: null,
+    });
+  }
 };
 
 const get_all_price_list = async (req, res) => {
   try {
-  } catch (error) {}
+    const { error, value } = querySchema.validate(req.query);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        data: null,
+      });
+    }
+
+    const {
+      limit = null,
+      page = null,
+      keyword = "",
+      filter = {},
+      order = { price_list_id: "desc" },
+    } = value;
+
+    let offset = limit && page ? (page - 1) * limit : 0;
+    const orderField = Object.keys(order)[0];
+    const orderDirection =
+      order[orderField]?.toLowerCase() === "asc" ? "ASC" : "DESC";
+
+    const whereClause = {
+      price_list_delete_at: null,
+    };
+
+    if (filter.price_list_name) {
+      const filterNames = Array.isArray(filter.price_list_name)
+        ? filter.price_list_name
+        : filter.price_list_name.split(",");
+
+      if (filterNames.length > 0) {
+        whereClause.price_list_name = {
+          [Sequelize.Op.or]: filterNames.map((name) => ({
+            [Sequelize.Op.like]: `%${name.trim()}%`,
+          })),
+          [Sequelize.Op.not]: null,
+        };
+      } else {
+        console.log("Empty filter.price_list_name");
+        return res.status(404).json({
+          success: false,
+          message: "Data Tidak Di Temukan",
+        });
+      }
+    }
+    if (keyword) {
+      const keywordClause = {
+        [Sequelize.Op.like]: `%${keyword}%`,
+      };
+      offset = 0;
+
+      whereClause.price_list_name = whereClause.price_list_name
+        ? { [Sequelize.Op.and]: [whereClause.price_list_name, keywordClause] }
+        : keywordClause;
+    }
+
+    const data = await tbl_price_list.findAndCountAll({
+      where: whereClause,
+      order: [[orderField, orderDirection]],
+      limit: limit ? parseInt(limit) : null,
+      offset: offset ? parseInt(offset) : null,
+      include: [
+        {
+          model: tbl_business,
+          as: "price_business_as",
+          attributes: [
+            "business_uuid",
+            "business_name",
+            "business_desc",
+            "business_province",
+            "business_regency",
+            "business_subdistrict",
+            "business_address",
+            "business_customer",
+          ],
+        },
+      ],
+    });
+
+    const totalPages = limit ? Math.ceil(data.count / (limit || 1)) : 1;
+
+    const result = {
+      success: true,
+      message: "Sukses mendapatkan data",
+      data: data.rows.map((price) => ({
+        price_list_uuid: price.price_list_uuid,
+        price_list_name: price.price_list_name,
+        price_list_price: price.price_list_price,
+        price_list_desc: price.price_list_desc,
+        price_list_status: price.price_list_status,
+        price_list_order: price.price_list_order,
+        price_list_business: price.price_business_as
+          ? {
+              business_uuid: price.price_business_as.business_uuid,
+              business_name: price.price_business_as.business_name,
+              business_desc: price.price_business_as.business_desc,
+              business_province: price.price_business_as.business_province,
+              business_regency: price.price_business_as.business_regency,
+              business_subdistrict:
+                price.price_business_as.business_subdistrict,
+              business_address: price.price_business_as.business_address,
+            }
+          : null,
+      })),
+      pages: {
+        total: data.count,
+        per_page: limit || data.count,
+        next_page: limit && page ? (page < totalPages ? page + 1 : null) : null,
+        to: limit ? offset + data.rows.length : data.count,
+        last_page: totalPages,
+        current_page: page || 1,
+        from: offset,
+      },
+    };
+
+    if (data.count === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Data Tidak Ditemukan",
+        data: null,
+        pages: {
+          total: 0,
+          per_page: limit || 0,
+          next_page: null,
+          to: 0,
+          last_page: 0,
+          current_page: page || 1,
+          from: 0,
+        },
+      });
+    }
+
+    const currentUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    const excludePagesUrl = "http://localhost:9900/api/v1/price_list/get_all";
+
+    if (currentUrl === excludePagesUrl) {
+      delete result.pages;
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error, "Data Error");
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      data: null,
+    });
+  }
 };
 
 const get_uniqe_price_list = async (req, res) => {
   try {
-  } catch (error) {}
+    const { error, value } = querySchemaUniqe.validate(req.query);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        data: null,
+      });
+    }
+
+    const { field } = value;
+    const fieldsArray = field.split(",");
+    const tableAttributes = tbl_price_list.rawAttributes;
+    const invalidFields = fieldsArray.filter((f) => !(f in tableAttributes));
+
+    if (invalidFields.length > 0) {
+      return res.status(200).json({
+        success: false,
+        message: "Gagal mendapatkan data",
+        data: null,
+      });
+    }
+
+    const uniqeValues = {};
+
+    for (const f of fieldsArray) {
+      const values = await tbl_price_list.findAll({
+        attributes: [[Sequelize.fn("DISTINCT", Sequelize.col(f)), f]],
+        where: {
+          price_list_delete_at: null,
+        },
+      });
+
+      if (values && values.length > 0) {
+        uniqeValues[f] = values.map((item) => item[f]);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Sukses mendapatkan data",
+      data: uniqeValues,
+    });
+  } catch (error) {
+    console.log(error, "Data Error");
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      data: null,
+    });
+  }
 };
 
 const get_count_price_list = async (req, res) => {
   try {
-  } catch (error) {}
+    const { error, value } = querySchemaCount.validate(req.query);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        data: null,
+      });
+    }
+
+    const { field } = value;
+
+    const counts = {};
+
+    for (const fieldName in field) {
+      if (field.hasOwnProperty(fieldName)) {
+        const values = Array.isArray(field[fieldName])
+          ? field[fieldName]
+          : field[fieldName].split(",").map((val) => val.trim());
+
+        const valueCounts = {};
+
+        for (const value of values) {
+          const count = await tbl_price_list.count({
+            where: {
+              [fieldName]: {
+                [Sequelize.Op.not]: null,
+                [Sequelize.Op.eq]: value,
+              },
+              price_list_delete_at: null,
+            },
+          });
+          valueCounts[value] = count;
+        }
+
+        counts[fieldName] = Object.keys(valueCounts).map((value) => ({
+          value,
+          count: valueCounts[value],
+        }));
+      }
+    }
+
+    const response = {
+      success: true,
+      message: "Sukses mendapatkan data",
+      data: counts,
+    };
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error("Internal server error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      data: null,
+    });
+  }
 };
 
 const get_price_byBusiness = async (req, res) => {
   try {
-  } catch (error) {}
+    const { error, value } = querySchemaByBusiness.validate(req.query);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        data: null,
+      });
+    }
+
+    const customerUuid = req.session.userUuid;
+
+    const {
+      price_list_business = null,
+      limit = null,
+      page = null,
+      keyword = "",
+      filter = {},
+      order = { price_list_id: "desc" },
+    } = value;
+
+    let offset = limit && page ? (page - 1) * limit : 0;
+    const orderField = Object.keys(order)[0];
+    const orderDirection =
+      order[orderField]?.toLowerCase() === "asc" ? "ASC" : "DESC";
+
+    const whereClause = {
+      [Op.and]: [
+        { price_list_delete_at: null },
+        {
+          [Op.or]: [
+            {
+              price_list_business : price_list_business 
+                ? price_list_business 
+                : { [Op.ne]: null },
+            },
+            { price_list_name: { [Op.like]: `%${keyword}%` } },
+          ],
+        },
+        Sequelize.where(
+          Sequelize.col("price_business_as.business_customer"),
+          customerUuid
+        ),
+      ],
+    };
+
+    if (filter.price_list_name) {
+      const filterNames = Array.isArray(filter.price_list_name)
+        ? filter.price_list_name
+        : filter.price_list_name.split(",");
+
+      if (filterNames.length > 0) {
+        whereClause[Op.and].push({
+          price_list_name: {
+            [Op.or]: filterNames.map((name) => ({
+              [Op.like]: `%${name.trim()}%`,
+            })),
+          },
+        });
+      } else {
+        console.log("Empty filter.price_list_name");
+        return res.status(404).json({
+          success: false,
+          message: "Data Tidak Di Temukan",
+        });
+      }
+    }
+    if (keyword) {
+      const keywordClause = {
+        [Sequelize.Op.like]: `%${keyword}%`,
+      };
+      offset = 0;
+
+      whereClause.price_list_name = whereClause.price_list_name
+        ? { [Sequelize.Op.and]: [whereClause.price_list_name, keywordClause] }
+        : keywordClause;
+    }
+
+    const data = await tbl_price_list.findAndCountAll({
+      where: whereClause,
+      order: [[orderField, orderDirection]],
+      limit: limit ? parseInt(limit) : null,
+      offset: offset ? parseInt(offset) : null,
+      include: [
+        {
+          model: tbl_business,
+          as: "price_business_as",
+          attributes: [
+            "business_uuid",
+            "business_name",
+            "business_desc",
+            "business_province",
+            "business_regency",
+            "business_subdistrict",
+            "business_address",
+            "business_customer",
+          ],
+        },
+      ],
+    });
+
+    const totalPages = limit ? Math.ceil(data.count / (limit || 1)) : 1;
+
+    const result = {
+        success: true,
+        message: "Sukses mendapatkan data",
+        data: data.rows.map((price) => ({
+          price_list_uuid: price.price_list_uuid,
+          price_list_name: price.price_list_name,
+          price_list_price: price.price_list_price,
+          price_list_desc: price.price_list_desc,
+          price_list_status: price.price_list_status,
+          price_list_order: price.price_list_order,
+          price_list_business: price.price_business_as
+            ? {
+                business_uuid: price.price_business_as.business_uuid,
+                business_name: price.price_business_as.business_name,
+                business_desc: price.price_business_as.business_desc,
+                business_province: price.price_business_as.business_province,
+                business_regency: price.price_business_as.business_regency,
+                business_subdistrict:
+                  price.price_business_as.business_subdistrict,
+                business_address: price.price_business_as.business_address,
+              }
+            : null,
+        })),
+        pages: {
+          total: data.count,
+          per_page: limit || data.count,
+          next_page: limit && page ? (page < totalPages ? page + 1 : null) : null,
+          to: limit ? offset + data.rows.length : data.count,
+          last_page: totalPages,
+          current_page: page || 1,
+          from: offset,
+        },
+      };
+
+    if (data.count === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Data Tidak Ditemukan",
+        data: null,
+        pages: {
+          total: 0,
+          per_page: limit || 0,
+          next_page: null,
+          to: 0,
+          last_page: 0,
+          current_page: page || 1,
+          from: 0,
+        },
+      });
+    }
+
+    const currentUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    const excludePagesUrl =
+      "http://localhost:9900/api/v1/price_list/get_all_customer";
+
+    if (currentUrl === excludePagesUrl) {
+      delete result.pages;
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error, "Data Error");
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      data: null,
+    });
+  }
 };
 
 module.exports = {
