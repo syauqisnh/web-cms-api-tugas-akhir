@@ -13,6 +13,12 @@ module.exports = (sequelize, DataTypes) => {
         targetKey: 'business_uuid', 
         as: "price_business_as",
       });
+
+      tbl_price_list.belongsTo(models.tbl_media, {
+        foreignKey: 'price_list_media',
+        targetKey: 'media_uuid', 
+        as: "price_media_as",
+      });
     }
   }
   tbl_price_list.init(

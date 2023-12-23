@@ -45,19 +45,19 @@ const querySchema = Joi.object({
 });
 
 const querySchemaByBusiness = Joi.object({
-    price_list_business: Joi.string().guid({ version: "uuidv4" }).optional(),
-    limit: Joi.number().integer().min(1).optional(),
-    page: Joi.number().integer().min(1).optional(),
-    keyword: Joi.string().trim().optional(),
-    filter: Joi.object({
-      price_list_name: Joi.alternatives()
-        .try(Joi.string().trim(), Joi.array().items(Joi.string().trim()))
-        .optional(),
-    }).optional(),
-    order: Joi.object()
-      .pattern(Joi.string(), Joi.string().valid("asc", "desc", "ASC", "DESC"))
+  price_list_business: Joi.string().guid({ version: "uuidv4" }).optional(),
+  limit: Joi.number().integer().min(1).optional(),
+  page: Joi.number().integer().min(1).optional(),
+  keyword: Joi.string().trim().optional(),
+  filter: Joi.object({
+    price_list_name: Joi.alternatives()
+      .try(Joi.string().trim(), Joi.array().items(Joi.string().trim()))
       .optional(),
-  });
+  }).optional(),
+  order: Joi.object()
+    .pattern(Joi.string(), Joi.string().valid("asc", "desc", "ASC", "DESC"))
+    .optional(),
+});
 
 const querySchemaUniqe = Joi.object({
   field: Joi.string().required().pattern(new RegExp("^[a-zA-Z0-9,_]+$")),
@@ -94,7 +94,7 @@ const post_price_list = async (req, res) => {
       price_list_status,
       price_list_order,
       price_list_business,
-      price_list_media
+      price_list_media,
     } = value;
 
     const businessValid = await tbl_business.findOne({
@@ -136,35 +136,35 @@ const post_price_list = async (req, res) => {
       price_list_status: price_list_status,
       price_list_order: price_list_order,
       price_list_business: price_list_business,
+      price_list_media: price_list_media,
     });
 
     if (!create_price_list) {
-        return res.status(404).json({
-          success: false,
-          message: "Gagal menambahkan data",
-          data: null,
-        });
-      } else {
-  
+      return res.status(404).json({
+        success: false,
+        message: "Gagal menambahkan data",
+        data: null,
+      });
+    } else {
       const update_media = await tbl_media.findOne({
         where: {
-          media_uuid : price_list_media
+          media_uuid: price_list_media,
         },
       });
-  
+
       if (!update_media) {
         return res.status(404).json({
           success: false,
           message: "Bisnis tidak ditemukan",
           data: null,
         });
-      }else{
+      } else {
         await update_media.update({
           media_uuid_table: price_list_uuid || update_media.media_uuid_table,
           media_table: "price_list" || update_media.media_table,
-          price_list_update_at: new Date()
-        })
-  
+          price_list_update_at: new Date(),
+        });
+
         res.status(200).json({
           success: true,
           message: "Berhasil menambahkan data bisnis",
@@ -477,6 +477,11 @@ const get_all_price_list = async (req, res) => {
             "business_customer",
           ],
         },
+        {
+          model: tbl_media,
+          as: "price_media_as",
+          attributes: ["media_uuid", "media_name", "media_hash_name"],
+        },
       ],
     });
 
@@ -502,6 +507,13 @@ const get_all_price_list = async (req, res) => {
               business_subdistrict:
                 price.price_business_as.business_subdistrict,
               business_address: price.price_business_as.business_address,
+            }
+          : null,
+        price_list_media: price.price_media_as
+          ? {
+              media_uuid: price.price_media_as.media_uuid,
+              media_name: price.price_media_as.media_name,
+              media_hash_name: price.price_media_as.media_hash_name,
             }
           : null,
       })),
@@ -698,8 +710,8 @@ const get_price_byBusiness = async (req, res) => {
         {
           [Op.or]: [
             {
-              price_list_business : price_list_business 
-                ? price_list_business 
+              price_list_business: price_list_business
+                ? price_list_business
                 : { [Op.ne]: null },
             },
             { price_list_name: { [Op.like]: `%${keyword}%` } },
@@ -770,38 +782,38 @@ const get_price_byBusiness = async (req, res) => {
     const totalPages = limit ? Math.ceil(data.count / (limit || 1)) : 1;
 
     const result = {
-        success: true,
-        message: "Sukses mendapatkan data",
-        data: data.rows.map((price) => ({
-          price_list_uuid: price.price_list_uuid,
-          price_list_name: price.price_list_name,
-          price_list_price: price.price_list_price,
-          price_list_desc: price.price_list_desc,
-          price_list_status: price.price_list_status,
-          price_list_order: price.price_list_order,
-          price_list_business: price.price_business_as
-            ? {
-                business_uuid: price.price_business_as.business_uuid,
-                business_name: price.price_business_as.business_name,
-                business_desc: price.price_business_as.business_desc,
-                business_province: price.price_business_as.business_province,
-                business_regency: price.price_business_as.business_regency,
-                business_subdistrict:
-                  price.price_business_as.business_subdistrict,
-                business_address: price.price_business_as.business_address,
-              }
-            : null,
-        })),
-        pages: {
-          total: data.count,
-          per_page: limit || data.count,
-          next_page: limit && page ? (page < totalPages ? page + 1 : null) : null,
-          to: limit ? offset + data.rows.length : data.count,
-          last_page: totalPages,
-          current_page: page || 1,
-          from: offset,
-        },
-      };
+      success: true,
+      message: "Sukses mendapatkan data",
+      data: data.rows.map((price) => ({
+        price_list_uuid: price.price_list_uuid,
+        price_list_name: price.price_list_name,
+        price_list_price: price.price_list_price,
+        price_list_desc: price.price_list_desc,
+        price_list_status: price.price_list_status,
+        price_list_order: price.price_list_order,
+        price_list_business: price.price_business_as
+          ? {
+              business_uuid: price.price_business_as.business_uuid,
+              business_name: price.price_business_as.business_name,
+              business_desc: price.price_business_as.business_desc,
+              business_province: price.price_business_as.business_province,
+              business_regency: price.price_business_as.business_regency,
+              business_subdistrict:
+                price.price_business_as.business_subdistrict,
+              business_address: price.price_business_as.business_address,
+            }
+          : null,
+      })),
+      pages: {
+        total: data.count,
+        per_page: limit || data.count,
+        next_page: limit && page ? (page < totalPages ? page + 1 : null) : null,
+        to: limit ? offset + data.rows.length : data.count,
+        last_page: totalPages,
+        current_page: page || 1,
+        from: offset,
+      },
+    };
 
     if (data.count === 0) {
       return res.status(404).json({
