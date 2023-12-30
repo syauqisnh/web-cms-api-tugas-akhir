@@ -18,12 +18,6 @@ module.exports = (sequelize, DataTypes) => {
         targetKey: "customer_uuid",
         as: "business_customer_as",
       });
-
-      tbl_business.belongsTo(models.tbl_media, {
-        foreignKey: "business_media",
-        targetKey: "media_uuid",
-        as: "business_media_as",
-      });
     }
   }
   tbl_business.init(
@@ -45,7 +39,6 @@ module.exports = (sequelize, DataTypes) => {
       business_email: DataTypes.STRING,
       business_link_wa: DataTypes.STRING,
       business_customer: DataTypes.STRING,
-      business_media: DataTypes.STRING,
       business_create_at: DataTypes.DATE,
       business_update_at: DataTypes.DATE,
       business_delete_at: DataTypes.DATE,

@@ -9,7 +9,7 @@ const Sequelize = require("sequelize");
 
 const priceSchema = Joi.object({
   price_list_name: Joi.string().required(),
-  price_list_price: Joi.string().required(),
+  price_list_price: Joi.number().required(),
   price_list_desc: Joi.string().required(),
   price_list_status: Joi.string().valid("Y", "N").default("N").required(),
   price_list_order: Joi.string().required(),

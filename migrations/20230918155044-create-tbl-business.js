@@ -30,9 +30,6 @@ module.exports = {
       business_address: {
         type: Sequelize.STRING
       },
-      business_media: {
-        type: Sequelize.STRING
-      },
       business_notelp: {
         type: Sequelize.STRING
       },

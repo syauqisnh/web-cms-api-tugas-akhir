@@ -16,7 +16,7 @@ module.exports = {
         type: Sequelize.STRING
       },
       price_list_price: {
-        type: Sequelize.STRING
+        type: Sequelize.DOUBLE
       },
       price_list_desc: {
         type: Sequelize.STRING

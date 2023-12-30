@@ -33,6 +33,12 @@ app.use(cors({
     origin: 'http://localhost:5173'}));
 app.use(route);
 
+app.use('/uploads/img', express.static('uploads/img/'));
+app.use('/uploads/pdf', express.static('uploads/pdf/'));
+app.use('/uploads/doc', express.static('uploads/doc/'));
+app.use('/uploads/video', express.static('uploads/video/'));
+app.use('/uploads/excel', express.static('uploads/excel/'));
+ 
 app.listen(9900, () => {
     console.log('Sedang Berjalan di port 9900');
 });

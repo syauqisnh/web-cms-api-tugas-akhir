@@ -837,7 +837,7 @@ const get_all_byScope = async (req, res) => {
         {
           model: tbl_media,
           as: "team_media_as",
-          attributes: ["media_uuid", "media_name", "media_hash_name"],
+          attributes: ["media_uuid", "media_name", "media_hash_name", "media_url"],
         },
       ],
     });
@@ -875,6 +875,7 @@ const get_all_byScope = async (req, res) => {
           ? {
               media_uuid: teams.team_media_as.media_uuid,
               media_name: teams.team_media_as.media_name,
+              media_url: teams.team_media_as.media_url,
               media_hash_name: teams.team_media_as.media_hash_name,
             }
           : null,

@@ -8,7 +8,17 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      tbl_tnc.belongsTo(models.tbl_price_list, {
+        foreignKey: 'tnc_uuid_table',
+        targetKey: 'price_list_uuid', 
+        as: "tnc_price_as",
+      });
+
+      tbl_tnc.belongsTo(models.tbl_business, {
+        foreignKey: 'tnc_business',
+        targetKey: 'business_uuid',
+        as: 'tnc_business_as'
+      });
     }
   }
   tbl_tnc.init(

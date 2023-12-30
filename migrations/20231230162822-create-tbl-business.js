@@ -42,9 +42,6 @@ module.exports = {
       business_customer: {
         type: Sequelize.STRING
       },
-      business_media: {
-        type: Sequelize.STRING
-      },
       business_create_at: {
         allowNull: false,
         type: Sequelize.DATE,

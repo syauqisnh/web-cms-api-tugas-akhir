@@ -235,7 +235,7 @@ const get_detail_level = async (req, res) => {
   }
 };
 
-// Untuk Menampilkan Seluruh Datanya(perbaikan)
+// Untuk Menampilkan Seluruh Datanya
 const get_all_levels = async (req, res) => {
   try {
     const { error, value } = querySchema.validate(req.query);
