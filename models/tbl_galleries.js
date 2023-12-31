@@ -8,7 +8,10 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      tbl_galleries.hasOne(models.tbl_media, {
+        foreignKey: 'media_uuid_table',
+        sourceKey: 'gallery_uuid',
+      });
     }
   }
   tbl_galleries.init(
