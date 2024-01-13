@@ -38,12 +38,17 @@ const querySchema = Joi.object({
     price_list_name: Joi.alternatives()
       .try(Joi.string().trim(), Joi.array().items(Joi.string().trim()))
       .optional(),
+    price_list_price: Joi.object({
+      min: Joi.number().optional(),
+      max: Joi.number().optional(),
+    }).optional(),
+    price_list_status: Joi.string().valid("N", "Y").optional(),
+    price_list_business: Joi.string().optional(),
   }).optional(),
   order: Joi.object()
     .pattern(Joi.string(), Joi.string().valid("asc", "desc", "ASC", "DESC"))
     .optional(),
 });
-
 const querySchemaByBusiness = Joi.object({
   price_list_business: Joi.string().guid({ version: "uuidv4" }).optional(),
   limit: Joi.number().integer().min(1).optional(),
@@ -107,21 +112,6 @@ const post_price_list = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Data tidak ditemukan",
-        data: null,
-      });
-    }
-
-    const existingPrice = await tbl_price_list.findOne({
-      where: {
-        price_list_business: price_list_business,
-        price_list_delete_at: null,
-      },
-    });
-
-    if (existingPrice) {
-      return res.status(400).json({
-        success: false,
-        message: "Data sudah digunakan",
         data: null,
       });
     }
@@ -446,6 +436,28 @@ const get_all_price_list = async (req, res) => {
         });
       }
     }
+    // Filter based on price_list_price
+    if (filter.price_list_price && (filter.price_list_price.min || filter.price_list_price.max)) {
+      whereClause.price_list_price = {};
+      if (filter.price_list_price.min) {
+        whereClause.price_list_price[Sequelize.Op.gte] = filter.price_list_price.min;
+      }
+      if (filter.price_list_price.max) {
+        whereClause.price_list_price[Sequelize.Op.lte] = filter.price_list_price.max;
+      }
+    }
+    
+    // Filter based on price_list_status
+    if (filter.price_list_status) {
+      whereClause.price_list_status = filter.price_list_status;
+    }
+
+    if (filter.price_list_business) {
+      whereClause['$price_business_as.business_name$'] = {
+        [Sequelize.Op.like]: `%${filter.price_list_business.trim()}%`,
+      };
+    }
+
     if (keyword) {
       const keywordClause = {
         [Sequelize.Op.like]: `%${keyword}%`,
@@ -466,6 +478,9 @@ const get_all_price_list = async (req, res) => {
         {
           model: tbl_business,
           as: "price_business_as",
+          where: {
+            business_delete_at: null, 
+          },
           attributes: [
             "business_uuid",
             "business_name",
@@ -765,6 +780,9 @@ const get_price_byBusiness = async (req, res) => {
         {
           model: tbl_business,
           as: "price_business_as",
+          where: {
+            business_delete_at: null, 
+          },
           attributes: [
             "business_uuid",
             "business_name",

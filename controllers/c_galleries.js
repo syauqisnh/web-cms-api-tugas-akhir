@@ -12,6 +12,20 @@ const galleriesSchema = Joi.object({
     gallery_business: Joi.string().required(),
 });
 
+const querySchema = Joi.object({
+    limit: Joi.number().integer().min(1).optional(),
+    page: Joi.number().integer().min(1).optional(),
+    keyword: Joi.string().trim().optional(),
+    filter: Joi.object({
+      gallery_name: Joi.alternatives()
+        .try(Joi.string().trim(), Joi.array().items(Joi.string().trim()))
+        .optional(),
+    }).optional(),
+    order: Joi.object()
+      .pattern(Joi.string(), Joi.string().valid("asc", "desc", "ASC", "DESC"))
+      .optional(),
+  });
+
 const post_galleries = async (req, res) => {
     try {
         const { error, value } = galleriesSchema.validate(req.body);
@@ -37,17 +51,17 @@ const post_galleries = async (req, res) => {
             });
         }
 
-        const existingGallery = await tbl_galleries.findOne({
-            where: { gallery_business: gallery_business, gallery_delete_at: null },
-          });
+        // const existingGallery = await tbl_galleries.findOne({
+        //     where: { gallery_business: gallery_business, gallery_delete_at: null },
+        //   });
       
-          if (existingGallery) {
-            return res.status(400).json({
-              success: false,
-              message: "Data sudah digunakan",
-              data: null,
-            });
-          }
+        //   if (existingGallery) {
+        //     return res.status(400).json({
+        //       success: false,
+        //       message: "Data sudah digunakan",
+        //       data: null,
+        //     });
+        //   }
         
         const gallery_uuid = uuidv4();
         const new_gallery = await tbl_galleries.create({
@@ -108,6 +122,157 @@ const get_detail_galleries = async (req, res) => {
 };
 
 const get_all_galleries = async (req, res) => {
+    try {
+        const { error, value } = querySchema.validate(req.query);
+        if (error) {
+          return res.status(400).json({
+            success: false,
+            message: error.details[0].message,
+            data: null,
+          });
+        }
+    
+        const {
+          limit = null,
+          page = null,
+          keyword = "",
+          filter = {},
+          order = { gallery_id: "desc" },
+        } = value;
+    
+        let offset = limit && page ? (page - 1) * limit : 0;
+        const orderField = Object.keys(order)[0];
+        const orderDirection =
+          order[orderField]?.toLowerCase() === "asc" ? "ASC" : "DESC";
+    
+        const whereClause = {
+          gallery_delete_at: null,
+        };
+    
+        if (filter.gallery_name) {
+          const filterNames = Array.isArray(filter.gallery_name)
+            ? filter.gallery_name
+            : filter.gallery_name.split(",");
+    
+          if (filterNames.length > 0) {
+            whereClause.gallery_name = {
+              [Sequelize.Op.or]: filterNames.map((name) => ({
+                [Sequelize.Op.like]: `%${name.trim()}%`,
+              })),
+              [Sequelize.Op.not]: null,
+            };
+          } else {
+            console.log("Empty filter.gallery_name");
+            return res.status(404).json({
+              success: false,
+              message: "Data Tidak Di Temukan",
+            });
+          }
+        }
+        if (keyword) {
+          const keywordClause = {
+            [Sequelize.Op.like]: `%${keyword}%`,
+          };
+          offset = 0;
+    
+          whereClause.gallery_name = whereClause.gallery_name
+            ? { [Sequelize.Op.and]: [whereClause.gallery_name, keywordClause] }
+            : keywordClause;
+        }
+    
+        const data = await tbl_galleries.findAndCountAll({
+          where: whereClause,
+          order: [[orderField, orderDirection]],
+          limit: limit ? parseInt(limit) : null,
+          offset: offset ? parseInt(offset) : null,
+          include: [
+            {
+              model: tbl_business,
+              as: "gallery_business_as",
+              where: {
+                business_delete_at: null, 
+              },
+              attributes: [
+                "business_uuid",
+                "business_name",
+                "business_desc",
+                "business_province",
+                "business_regency",
+                "business_subdistrict",
+                "business_address",
+                "business_customer",
+              ],
+            },
+          ],
+        });
+    
+        const totalPages = limit ? Math.ceil(data.count / (limit || 1)) : 1;
+    
+        const result = {
+          success: true,
+          message: "Sukses mendapatkan data",
+          data: data.rows.map((gallery) => ({
+            gallery_uuid: gallery.gallery_uuid,
+            gallery_name: gallery.gallery_name,
+            gallery_desc: gallery.gallery_desc,
+            gallery_business: gallery.gallery_business_as
+              ? {
+                  business_uuid: gallery.gallery_business_as.business_uuid,
+                  business_name: gallery.gallery_business_as.business_name,
+                  business_desc: gallery.gallery_business_as.business_desc,
+                  business_province: gallery.gallery_business_as.business_province,
+                  business_regency: gallery.gallery_business_as.business_regency,
+                  business_subdistrict:
+                    gallery.gallery_business_as.business_subdistrict,
+                  business_address: gallery.gallery_business_as.business_address,
+                  business_customer: gallery.gallery_business_as.business_customer,
+                }
+              : null,
+          })),
+          pages: {
+            total: data.count,
+            per_page: limit || data.count,
+            next_page: limit && page ? (page < totalPages ? page + 1 : null) : null,
+            to: limit ? offset + data.rows.length : data.count,
+            last_page: totalPages,
+            current_page: page || 1,
+            from: offset,
+          },
+        };
+    
+        if (data.count === 0) {
+          return res.status(404).json({
+            success: false,
+            message: "Data Tidak Ditemukan",
+            data: null,
+            pages: {
+              total: 0,
+              per_page: limit || 0,
+              next_page: null,
+              to: 0,
+              last_page: 0,
+              current_page: page || 1,
+              from: 0,
+            },
+          });
+        }
+    
+        const currentUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+        const excludePagesUrl = "http://localhost:9900/api/v1/gallery/get_all";
+    
+        if (currentUrl === excludePagesUrl) {
+          delete result.pages;
+        }
+    
+        res.status(200).json(result);
+      } catch (error) {
+        console.log(error, "Data Error");
+        res.status(500).json({
+          success: false,
+          message: "Internal Server Error",
+          data: null,
+        });
+      }
 };
 
 const get_unique_galleries = async (req, res) => {

@@ -301,6 +301,9 @@ const get_detail_tnc = async (req, res) => {
         {
           model: tbl_business,
           as: "tnc_business_as",
+          where: {
+            business_delete_at: null, 
+          },
           attributes: [
             "business_uuid",
             "business_name",
@@ -448,6 +451,9 @@ const get_all_tnc = async (req, res) => {
         {
           model: tbl_business,
           as: "tnc_business_as",
+          where: {
+            business_delete_at: null, 
+          },
           attributes: [
             "business_uuid",
             "business_name",
@@ -755,6 +761,9 @@ const get_tnc_byPriceList = async (req, res) => {
         {
           model: tbl_business,
           as: "tnc_business_as",
+          where: {
+            business_delete_at: null, 
+          },
           attributes: [
             "business_uuid",
             "business_name",

@@ -6,18 +6,21 @@ module.exports = (sequelize, DataTypes) => {
       tbl_business.hasOne(models.tbl_media, {
         foreignKey: 'media_uuid_table',
         sourceKey: 'business_uuid',
+        onDelete: 'CASCADE',
       });
 
       tbl_business.belongsTo(models.tbl_customer, {
         foreignKey: "business_customer",
         targetKey: "customer_uuid",
         as: "business_customer_as",
+        onDelete: 'CASCADE',
       });
 
       tbl_business.belongsTo(models.tbl_media, {
         foreignKey: "business_media",
         targetKey: "media_uuid",
         as: "business_media_as",
+        onDelete: 'CASCADE',
       });
     }
   }

@@ -118,22 +118,6 @@ const post_teams = async (req, res) => {
       });
     }
 
-    const existingTeams = await tbl_teams.findOne({
-      where: {
-        team_scope: team_scope,
-        team_business: team_business,
-        team_delete_at: null,
-      },
-    });
-
-    if (existingTeams) {
-      return res.status(400).json({
-        success: false,
-        message: "Data sudah di gunakan",
-        data: null,
-      });
-    }
-
     const team_uuid = uuidv4();
 
     const new_teams = await tbl_teams.create({
@@ -499,6 +483,9 @@ const get_all_teams = async (req, res) => {
         {
           model: tbl_business,
           as: "team_business_as",
+          where: {
+            business_delete_at: null, 
+          },
           attributes: [
             "business_uuid",
             "business_name",
@@ -523,7 +510,7 @@ const get_all_teams = async (req, res) => {
         {
           model: tbl_media,
           as: "team_media_as",
-          attributes: ["media_uuid", "media_name", "media_hash_name"],
+          attributes: ["media_uuid", "media_name", "media_hash_name", "media_url"],
         },
       ],
     });
@@ -561,6 +548,7 @@ const get_all_teams = async (req, res) => {
           ? {
               media_uuid: teams.team_media_as.media_uuid,
               media_name: teams.team_media_as.media_name,
+              media_url: teams.team_media_as.media_url,
               media_hash_name: teams.team_media_as.media_hash_name,
             }
           : null,
@@ -813,6 +801,9 @@ const get_all_byScope = async (req, res) => {
         {
           model: tbl_business,
           as: "team_business_as",
+          where: {
+            business_delete_at: null, 
+          },
           attributes: [
             "business_uuid",
             "business_name",

@@ -509,7 +509,7 @@ const get_all_business = async (req, res) => {
               {
                 model: tbl_media,
                 as: 'business_media_as',
-                attributes: ['media_uuid', 'media_name', 'media_hash_name'],
+                attributes: ['media_uuid', 'media_name', 'media_hash_name', 'media_url'],
               }
             ]
           });
@@ -544,6 +544,7 @@ const get_all_business = async (req, res) => {
                 media_uuid: business.business_media_as.media_uuid,
                 media_name: business.business_media_as.media_name,
                 media_hash_name: business.business_media_as.media_hash_name,
+                media_url: business.business_media_as.media_url,
               } : null,
             })),
             pages: {
@@ -801,7 +802,7 @@ const get_business_byCustomer = async (req, res) => {
               {
                 model: tbl_media,
                 as: 'business_media_as',
-                attributes: ['media_uuid', 'media_name', 'media_hash_name'],
+                attributes: ['media_uuid', 'media_name', 'media_hash_name', 'media_url'],
               }
             ]
           });
@@ -836,6 +837,7 @@ const get_business_byCustomer = async (req, res) => {
                 media_uuid: business.business_media_as.media_uuid,
                 media_name: business.business_media_as.media_name,
                 media_hash_name: business.business_media_as.media_hash_name,
+                media_url: business.business_media_as.media_url,
               } : null,
             })),
             pages: {

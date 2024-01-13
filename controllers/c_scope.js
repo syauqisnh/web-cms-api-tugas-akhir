@@ -92,18 +92,6 @@ const post_scope = async (req, res) => {
       });
     }
 
-    const existingScope = await tbl_scopes.findOne({
-      where: { scope_business: scope_business, scope_delete_at: null },
-    });
-
-    if (existingScope) {
-      return res.status(400).json({
-        success: false,
-        message: "Data sudah digunakan",
-        data: null,
-      });
-    }
-
     const scope_uuid = uuidv4();
     const new_scope = await tbl_scopes.create({
       scope_uuid: scope_uuid,
@@ -319,6 +307,9 @@ const get_all_scope = async (req, res) => {
         {
           model: tbl_business,
           as: "scope_business_as",
+          where: {
+            business_delete_at: null, 
+          },
           attributes: [
             "business_uuid",
             "business_name",
@@ -681,6 +672,9 @@ const get_scope_byBusiness = async (req, res) => {
         {
           model: tbl_business,
           as: "scope_business_as",
+          where: {
+            business_delete_at: null, 
+          },
           attributes: [
             "business_uuid",
             "business_name",
@@ -690,6 +684,7 @@ const get_scope_byBusiness = async (req, res) => {
             "business_subdistrict",
             "business_address",
             "business_customer",
+            "business_delete_at",
           ],
         },
       ],
@@ -715,6 +710,7 @@ const get_scope_byBusiness = async (req, res) => {
                 scope.scope_business_as.business_subdistrict,
               business_address: scope.scope_business_as.business_address,
               business_customer: scope.scope_business_as.business_customer,
+              business_delete_at: scope.scope_business_as.business_delete_at,
             }
           : null,
       })),
