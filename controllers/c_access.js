@@ -5,18 +5,68 @@ const tbl_modules = db.tbl_modules;
 const tbl_permissions = db.tbl_permissions;
 const { v4: uuidv4 } = require("uuid");
 const Sequelize = require("sequelize");
+const Joi = require('joi');
+
+const accessSchema = Joi.object({
+  access_modul: Joi.string().required(),
+  access_permission: Joi.string().required(),
+  access_level: Joi.string().required(),
+});
+
+const updateAccessSchema = Joi.object({
+  access_modul: Joi.string().required(),
+  access_permission: Joi.string().required(),
+  access_level: Joi.string().required(),
+});
+
+const uuidAccessSchema = Joi.object({
+  access_uuid: Joi.string().uuid().required(),
+});
+
+const getAccessQuerySchema = Joi.object({
+  limit: Joi.number().integer(),
+  page: Joi.number().integer(),
+  keyword: Joi.string(),
+  order: Joi.object({
+    access_id: Joi.string().valid('asc', 'desc'),
+    modul_name: Joi.string().valid('asc', 'desc'),
+    permission_name: Joi.string().valid('asc', 'desc'),
+    level_name: Joi.string().valid('asc', 'desc'),
+  }),
+  filter: Joi.object({
+    access_modul: Joi.string(),
+    access_permission: Joi.string(),
+    access_level: Joi.string(),
+    modul_uuid: Joi.string(),
+    modul_name: Joi.string(),
+    permission_uuid: Joi.string(),
+    permission_name: Joi.string(),
+    level_uuid: Joi.string(),
+    level_name: Joi.string(),
+  }),
+});
+
+const querySchemaUniqe = Joi.object({
+  field: Joi.string().required().pattern(new RegExp('^[a-zA-Z0-9,_]+$'))
+});
+
+const getCountAccessSchema = Joi.object({
+  field: Joi.object().required(),
+});
 
 const post_access = async (req, res) => {
   try {
-    const { access_modul, access_permission, access_level } = req.body;
+    const { error } = accessSchema.validate(req.body);
 
-    if (!access_modul || !access_permission || !access_level) {
+    if (error) {
       return res.status(400).json({
         success: false,
-        message: "Belum ada data yang di isi",
+        message: error.details[0].message,
         data: null,
       });
     }
+
+    const { access_modul, access_permission, access_level } = req.body;
 
     const modulValid = await tbl_modules.findOne({
       where: { module_uuid: access_modul },
@@ -78,10 +128,16 @@ const put_access = async (req, res) => {
     const { access_uuid } = req.params;
     const { access_modul, access_permission, access_level } = req.body;
 
-    if (!access_modul || !access_permission || !access_level) {
+    const { error } = updateAccessSchema.validate({
+      access_modul,
+      access_permission,
+      access_level,
+    });
+
+    if (error) {
       return res.status(400).json({
         success: false,
-        message: "Data harus di isi",
+        message: error.details[0].message,
         data: null,
       });
     }
@@ -99,14 +155,8 @@ const put_access = async (req, res) => {
     }
 
     new_update.access_modul = access_modul;
-    await new_update.save();
-
     new_update.access_permission = access_permission;
-    await new_update.save();
-
     new_update.access_level = access_level;
-    await new_update.save();
-
     new_update.access_update_at = new Date();
     await new_update.save();
 
@@ -133,6 +183,16 @@ const put_access = async (req, res) => {
 
 const delete_access = async (req, res) => {
   try {
+    const { error } = uuidAccessSchema.validate(req.params);
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        data: null,
+      });
+    }
+
     const { access_uuid } = req.params;
 
     const new_delete = await tbl_access.findOne({
@@ -165,6 +225,16 @@ const delete_access = async (req, res) => {
 
 const get_all_access = async (req, res) => {
   try {
+    const { error } = getAccessQuerySchema.validate(req.query);
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        data: null,
+      });
+    }
+
     const {
       limit = null,
       page = null,
@@ -341,7 +411,17 @@ const get_all_access = async (req, res) => {
 
 const get_detail_access = async (req, res) => {
   try {
-    const { access_uuid } = req.params;
+    const {error, value} = uuidAccessSchema.validate(req.params);
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        data: null,
+      });
+    }
+
+    const { access_uuid } = value;
 
     const detail_access = await tbl_access.findOne({
       where: {
@@ -416,15 +496,16 @@ const get_detail_access = async (req, res) => {
 
 const get_unique_access = async (req, res) => {
   try {
-    const { field } = req.query;
-
-    if (!field) {
+    const { error, value } = querySchemaUniqe.validate(req.query);
+    if (error) {
       return res.status(400).json({
         success: false,
-        message: 'Parameter "field" diperlukan',
+        message: 'Validasi error: ' + error.details.map(d => d.message).join(', '),
         data: null,
       });
     }
+
+    const { field } = value;
 
     const pemetaanFieldURLkeDB = {
       modul_name: "access_modul",
@@ -494,6 +575,16 @@ const get_unique_access = async (req, res) => {
 
 const get_count_access = async (req, res) => {
   try {
+    const { error } = getCountAccessSchema.validate(req.query);
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        data: null,
+      });
+    }
+
     const { field } = req.query;
 
     if (!field) {

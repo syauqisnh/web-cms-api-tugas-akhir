@@ -95,56 +95,57 @@ const post_module = async (req, res) => {
 }
 
 const put_module = async (req, res) => {
-    try {
-      const module_uuid = req.params.module_uuid;
+  try {
+    const module_uuid = req.params.module_uuid;
 
-      const {error, value} = updatemoduleSchema.validate(req.body);
-      if (error) {
-        return res.status(400).json({
-          success: false,
-          message: error.details[0].message,
-          data: null
-        });
-      }
+    const { error, value } = updatemoduleSchema.validate(req.body);
 
-        const update_modules = await tbl_modules.findOne({
-            where: {
-                module_uuid,
-            }
-        })
-
-        if (!update_modules) {
-            return res.status(404).json({
-                success: false,
-                message: 'Gagal mengupdate data',
-                data: null
-            })
-        }
-
-        update_modules.module_name = module_name;
-        await update_modules.save();
-
-        update_modules.module_update_at = new Date;
-        await update_modules.save();
-
-        res.status(200).json({
-            success: true,
-            message: 'Data berhasil diupdate',
-            data: {
-                module_name: update_modules.module_name,
-                module_create_at: update_modules.module_create_at,
-                module_update_at: update_modules.module_update_at
-            }
-        })
-    } catch (error) {
-        console.error(error, 'Data Error')
-        res.status(500).json({
-            success: false,
-            message: 'Internal Server Error',
-            data: null
-        })
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        data: null,
+      });
     }
-}
+
+    const update_modules = await tbl_modules.findOne({
+      where: {
+        module_uuid,
+      },
+    });
+
+    if (!update_modules) {
+      return res.status(404).json({
+        success: false,
+        message: 'Gagal mengupdate data',
+        data: null,
+      });
+    }
+
+    update_modules.module_name = value.module_name;
+    await update_modules.save();
+
+    update_modules.module_update_at = new Date();
+    await update_modules.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Data berhasil diupdate',
+      data: {
+        module_name: update_modules.module_name,
+        module_create_at: update_modules.module_create_at,
+        module_update_at: update_modules.module_update_at,
+      },
+    });
+  } catch (error) {
+    console.error(error, 'Data Error');
+    res.status(500).json({
+      success: false,
+      message: 'Internal Server Error',
+      data: null,
+    });
+  }
+};
 
 const delete_module = async (req, res) => {
     try {
@@ -429,7 +430,7 @@ const get_count_module = async (req, res) => {
   
       const { field } = value;
     
-        const counts = {};
+      const counts = {};
     
         for (const fieldName in field) {
           if (field.hasOwnProperty(fieldName)) {

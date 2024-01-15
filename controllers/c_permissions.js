@@ -2,18 +2,63 @@ const db = require('../models');
 const tbl_permissions = db.tbl_permissions;
 const {v4: uuidv4} = require('uuid');
 const Sequelize = require('sequelize');
+const Joi = require("joi");
 
+const permissionSchema = Joi.object({
+    permission_name: Joi.string().required(),
+  });
+  
+  const updatePermissionSchema = Joi.object({
+    permission_name: Joi.string().required(), 
+  });
+  
+  const uuidSchema = Joi.object({
+    permission_uuid: Joi.string().guid({ version: 'uuidv4' }).required()
+  });
+
+  const querySchema = Joi.object({
+    limit: Joi.number().integer().min(1).optional(),
+    page: Joi.number().integer().min(1).optional(),
+    keyword: Joi.string().trim().optional(),
+    filter: Joi.object({
+        permission_name: Joi.alternatives().try(
+            Joi.string().trim(),
+            Joi.array().items(Joi.string().trim())
+        ).optional()
+    }).optional(),
+    order: Joi.object().pattern(
+        Joi.string(), Joi.string().valid('asc', 'desc', 'ASC', 'DESC')
+    ).optional()
+  });
+  
+  const querySchemaUniqe = Joi.object({
+    field: Joi.string().required().pattern(new RegExp('^[a-zA-Z0-9,_]+$'))
+  });
+  
+  const querySchemaCount = Joi.object({
+    field: Joi.object()
+      .pattern(
+        Joi.string(),
+        Joi.alternatives().try(
+          Joi.string().trim(),
+          Joi.array().items(Joi.string().trim())
+        )
+      )
+      .required(),
+  });
+  
 const post_permissions = async (req, res) => {
     try {
-        const {permission_name} = req.body;
-        
-        if (!permission_name) {
-            return res.status(400).json({
-                success: false,
-                message: 'Belum ada data yang di isi',
-                data: null,
-            })
+        const {error, value} = permissionSchema.validate(req.body);
+
+        if (error) {
+          return res.status(400).json({
+            success: false,
+            message: error.details[0].message,
+            data: null
+          })
         }
+        const { permission_name } = value;
         const permission_uuid = uuidv4();
 
         const new_permissions = await tbl_permissions.create({
@@ -46,18 +91,19 @@ const post_permissions = async (req, res) => {
         })
     }
 };
+
 const put_permissions = async (req, res) => {
     try {
-        const {permission_uuid} = req.params;
-        const {permission_name} = req.body;
+        const permission_uuid = req.params.permission_uuid;
 
-        if (!permission_name) {
-            return res.status(400).json({
-                success: false,
-                message: 'Data harus di isi',
-                data: null
-            });
-        };
+        const {error, value} = updatePermissionSchema.validate(req.body);
+        if (error) {
+          return res.status(400).json({
+            success: false,
+            message: error.details[0].message,
+            data: null
+          });
+        }
 
         const update_permissions = await tbl_permissions.findOne({
             where: {permission_uuid},
@@ -71,7 +117,7 @@ const put_permissions = async (req, res) => {
             });
         };
         
-        update_permissions.permission_name = permission_name;
+        update_permissions.permission_name = value.permission_name;
         await update_permissions.save();
 
         update_permissions.permission_update_at = new Date();
@@ -95,9 +141,19 @@ const put_permissions = async (req, res) => {
         });
     }
 };
+
 const delete_permissions = async (req, res) => {
     try {
-        const {permission_uuid} = req.params;
+        const { error, value } = uuidSchema.validate(req.params);
+        if (error) {
+          return res.status(400).json({
+            success: false,
+            message: error.details[0].message,
+            data: null,
+          });
+        }
+    
+        const { permission_uuid } = value;
 
         const delete_permissions = await tbl_permissions.findOne({
             where: {permission_uuid},
@@ -128,15 +184,25 @@ const delete_permissions = async (req, res) => {
         });
     }
 };
+
 const get_all_permissions = async (req, res) => {
     try {
+        const { error, value } = querySchema.validate(req.query);
+        if (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.details[0].message,
+                data: null
+            });
+        }
+    
         const {
             limit = null,
-            keyword = "",
             page = null,
-            order = {permission_id: 'desc'},
+            keyword = '',
             filter = {},
-        } = req.query;
+            order = { permission_id: 'desc' }
+        } = value;
 
         let offset = limit && page ? (page - 1) * limit : 0;
         const orderField = Object.keys(order)[0];
@@ -239,9 +305,19 @@ const get_all_permissions = async (req, res) => {
         });
     }
 };
+
 const get_detail_permissions = async (req, res) => {
     try {
-        const {permission_uuid} = req.params;
+        const { error, value } = uuidSchema.validate(req.params);
+        if (error) {
+          return res.status(400).json({
+            success: false,
+            message: error.details[0].message,
+            data: null,
+          });
+        }
+    
+        const { permission_uuid } = value;
 
         const detail_permissions = await tbl_permissions.findOne({
             where: {
@@ -277,17 +353,19 @@ const get_detail_permissions = async (req, res) => {
         })
     }
 };
+
 const get_unique_permissions = async (req, res) => {
     try {
-        const {field} = req.query;
-
-        if (!field) {
+        const { error, value } = querySchemaUniqe.validate(req.query);
+        if (error) {
             return res.status(400).json({
                 success: false,
-                message: 'Parameter Field diperlukan',
+                message: error.details[0].message,
                 data: null
-            })
+            });
         }
+    
+        const { field } = value;
 
         const fieldsArray = field.split(',');
         const tableAttributes = tbl_permissions.rawAttributes;
@@ -330,18 +408,20 @@ const get_unique_permissions = async (req, res) => {
         })
     }
 };
+
 const get_count_permissions = async (req, res) => {
     try {
-        const {field} = req.query;
-
-        if (!field || typeof field !== 'object') {
-            return res.status(400).json({
-                success: false,
-                message: 'Parameter Field Harus berupa objek',
-                data: null
-            });
+        const { error, value } = querySchemaCount.validate(req.query);
+        if (error) {
+          return res.status(400).json({
+            success: false,
+            message: error.details[0].message,
+            data: null,
+          });
         }
-
+    
+        const { field } = value;
+      
         const counts = {};
 
         for (const fieldName in field) {
