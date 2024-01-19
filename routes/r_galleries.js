@@ -1,5 +1,5 @@
 const router = require('express').Router();
-// const { authenticate, adminOnly } = require('../middleware/authMiddleware');
+const { authenticate } = require('../middleware/authMiddleware');
 
 const {
     post_galleries,
@@ -12,13 +12,13 @@ const {
     get_galleries_byGalleries,
 } = require('../controllers/c_galleries')
 
-router.post('/galleries', post_galleries)
-router.put('/galleries/:galleries_uuid', put_galleries)
-router.delete('/galleries/:galleries_uuid', delete_galleries)
-router.get('/galleries/get_all', get_all_galleries)
-router.get('/galleries/get_unique', get_unique_galleries)
-router.get('/galleries/get_count', get_count_galleries)
+router.post('/galleries', authenticate, post_galleries)
+router.put('/galleries/:galleries_uuid',authenticate, put_galleries)
+router.delete('/galleries/:galleries_uuid',authenticate, delete_galleries)
+router.get('/galleries/get_all',authenticate, get_all_galleries)
+router.get('/galleries/get_unique',authenticate, get_unique_galleries)
+router.get('/galleries/get_count', authenticate, get_count_galleries)
 router.get('/galleries/get_all_customer/', get_galleries_byGalleries);
-router.get('/galleries/:galleries_uuid', get_detail_galleries)
+router.get('/galleries/:galleries_uuid', authenticate, get_detail_galleries)
 
 module.exports = router;
