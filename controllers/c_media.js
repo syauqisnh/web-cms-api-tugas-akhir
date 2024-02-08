@@ -10,7 +10,6 @@ const uuidSchema = Joi.object({
   table_uuid: Joi.string().guid({ version: "uuidv4" }).required(),
 });
 
-// Konfigurasi penyimpanan Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     let dest = "./uploads/";
@@ -38,7 +37,6 @@ const storage = multer.diskStorage({
   },
 });
 
-// Filter file (opsional, sesuaikan sesuai kebutuhan)
 const fileFilter = (req, file, cb) => {
   if (
     file.mimetype === "image/jpeg" ||

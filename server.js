@@ -39,7 +39,7 @@ app.use('/uploads/doc', express.static('uploads/doc/'));
 app.use('/uploads/video', express.static('uploads/video/'));
 app.use('/uploads/excel', express.static('uploads/excel/'));
  
-app.listen(9900, () => {
+app.listen(process.env.PORT, () => {
     console.log('Sedang Berjalan di port 9900');
 });
 
