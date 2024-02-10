@@ -12,6 +12,12 @@ const galleriesSchema = Joi.object({
     gallery_business: Joi.string().required(),
 });
 
+const galleriesUpdateSchema = Joi.object({
+  gallery_name: Joi.string().required(),
+  gallery_desc: Joi.string().required(),
+  gallery_business: Joi.string().required(),
+});
+
 const querySchema = Joi.object({
     limit: Joi.number().integer().min(1).optional(),
     page: Joi.number().integer().min(1).optional(),
@@ -24,12 +30,15 @@ const querySchema = Joi.object({
     order: Joi.object()
       .pattern(Joi.string(), Joi.string().valid("asc", "desc", "ASC", "DESC"))
       .optional(),
-  });
+});
+
+const uuidSchema = Joi.object({
+  gallery_uuid: Joi.string().guid({ version: "uuidv4" }).required(),
+});
 
 const post_galleries = async (req, res) => {
     try {
         const { error, value } = galleriesSchema.validate(req.body);
-
         if (error) {
             return res.status(400).json({
                 success: false,
@@ -50,18 +59,6 @@ const post_galleries = async (req, res) => {
             data: null,
             });
         }
-
-        // const existingGallery = await tbl_galleries.findOne({
-        //     where: { gallery_business: gallery_business, gallery_delete_at: null },
-        //   });
-      
-        //   if (existingGallery) {
-        //     return res.status(400).json({
-        //       success: false,
-        //       message: "Data sudah digunakan",
-        //       data: null,
-        //     });
-        //   }
         
         const gallery_uuid = uuidv4();
         const new_gallery = await tbl_galleries.create({
@@ -113,12 +110,195 @@ const post_galleries = async (req, res) => {
 };
 
 const put_galleries = async (req, res) => {
+  try {
+    const gallery_uuid = req.params.gallery_uuid;
+    const { error, value } = galleriesUpdateSchema.validate(req.body);
+  
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        data: null,
+      });
+    }
+  
+    const update_gallery = await tbl_galleries.findOne({
+      where: { gallery_uuid },
+    });
+  
+    if (!update_gallery) {
+      return res.status(404).json({
+        success: false,
+        message: "Gagal merubah data",
+        data: null,
+      });
+    }
+  
+    if (value.gallery_business && value.gallery_business !== update_gallery.gallery_business) {
+      const existingGallery = await tbl_galleries.findOne({
+        where: {
+          gallery_business: value.gallery_business,
+          gallery_uuid: { [Op.ne]: gallery_uuid },
+          gallery_delete_at: null
+        },
+      });
+  
+      if (existingGallery) {
+        return res.status(400).json({
+          success: false,
+          message: "Data Sudah di Gunakan",
+          data: null,
+        });
+      }
+    }
+  
+    await update_gallery.update({
+      gallery_name: value.gallery_name || update_gallery.gallery_name,
+      gallery_desc: value.gallery_desc || update_gallery.gallery_desc,
+      gallery_business: value.gallery_business || update_gallery.gallery_business,
+      gallery_update_at: new Date(),
+    });
+    
+    res.status(200).json({
+      success: true,
+      message: "Berhasil merubah data",
+      data: {
+        gallery_uuid: update_gallery.gallery_uuid,
+        gallery_name: update_gallery.gallery_name,
+        gallery_desc: update_gallery.gallery_desc,
+        gallery_business: update_gallery.gallery_business,
+      },
+    });
+  } catch (error) {
+    console.log(error, "Data Error");
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      data: null,
+    });
+  }
 };
 
 const delete_galleries = async (req, res) => {
+  try {
+    const { error, value } = uuidSchema.validate(req.params);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        data: null,
+      });
+    }
+
+    const { gallery_uuid } = value;
+
+    const delete_gallery = await tbl_galleries.findOne({
+      where: { gallery_uuid },
+    });
+
+    if (!delete_gallery) {
+      return res.status(404).json({
+        success: false,
+        message: "Gagal menghapus data",
+        data: null,
+      });
+    }
+
+    await delete_gallery.update({ gallery_delete_at: new Date() });
+
+    res.json({
+      success: true,
+      message: "Sukses menghapus data",
+    });
+  } catch (error) {
+    console.log(error, "Data Error");
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      data: null,
+    });
+  }
 };
 
 const get_detail_galleries = async (req, res) => {
+  try {
+    const { error, value } = uuidSchema.validate(req.params);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        data: null,
+      });
+    }
+
+    const { gallery_uuid } = value;
+
+    const detail_gallery = await tbl_galleries.findOne({
+      where: {
+        gallery_uuid,
+        gallery_delete_at: null,
+      },
+      include: [
+        {
+          model: tbl_business,
+          as: "gallery_business_as",
+          where: {
+            business_delete_at: null, 
+          },
+          attributes: [
+            "business_uuid",
+            "business_name",
+            "business_desc",
+            "business_province",
+            "business_regency",
+            "business_subdistrict",
+            "business_address",
+            "business_customer",
+          ],
+        },
+      ],
+    });
+
+    if (!detail_gallery) {
+      return res.status(404).json({
+        success: false,
+        message: "Gagal Mendapatkan Data",
+        data: null,
+      });
+    }
+
+    const result = {
+      success: true,
+      message: "Berhasil Mendapatkan Data",
+      data: {
+        gallery_uuid: detail_gallery.gallery_uuid,
+        gallery_name: detail_gallery.gallery_name,
+        gallery_desc: detail_gallery.gallery_desc,
+        gallery_business: detail_gallery.gallery_business_as
+          ? {
+              business_uuid: detail_gallery.gallery_business_as.business_uuid,
+              business_name: detail_gallery.gallery_business_as.business_name,
+              business_desc: detail_gallery.gallery_business_as.business_desc,
+              business_province: detail_gallery.gallery_business_as.business_province,
+              business_regency: detail_gallery.gallery_business_as.business_regency,
+              business_subdistrict:
+                detail_gallery.gallery_business_as.business_subdistrict,
+              business_address: detail_gallery.gallery_business_as.business_address,
+              business_customer: detail_gallery.gallery_business_as.business_customer,
+            }
+          : null,
+      },
+    };
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error, "Data Error");
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      data: null,
+    });
+  }
 };
 
 const get_all_galleries = async (req, res) => {

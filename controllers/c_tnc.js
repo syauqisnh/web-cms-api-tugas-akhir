@@ -108,7 +108,7 @@ const post_tnc = async (req, res) => {
       tnc_uuid: tnc_uuid,
       tnc_uuid_table: tnc_uuid_table,
       tnc_name: tnc_name,
-      tnc_business: priceValid.price_list_business, // Menggunakan uuid dari priceValid
+      tnc_business: priceValid.price_list_business, 
     });
 
     if (!create_tnc) {
@@ -164,7 +164,6 @@ const put_tnc = async (req, res) => {
       });
     }
 
-    // Periksa apakah tnc_uuid_table diubah
     if (value.tnc_uuid_table && value.tnc_uuid_table !== update_tnc.tnc_uuid_table) {
       // Periksa keberadaan data yang sama dengan tnc_uuid_table baru
       const existingPrice = await tbl_tnc.findOne({

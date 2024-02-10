@@ -18,12 +18,12 @@ const priceSchema = Joi.object({
 });
 
 const priceSchemaUpdate = Joi.object({
-  price_list_name: Joi.string().required(),
-  price_list_price: Joi.string().required(),
-  price_list_desc: Joi.string().required(),
+  price_list_name: Joi.string(),
+  price_list_price: Joi.number(),
+  price_list_desc: Joi.string(),
   price_list_status: Joi.string().valid("Y", "N").default("N").required(),
-  price_list_order: Joi.string().required(),
-  price_list_business: Joi.string().required(),
+  price_list_order: Joi.string(),
+  price_list_business: Joi.string(),
 });
 
 const uuidSchema = Joi.object({
