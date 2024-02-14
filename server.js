@@ -1,32 +1,11 @@
 require('dotenv').config();
 const express = require('express');
-const session = require("express-session");
+const cookieParser = require('cookie-parser');
 const route = require('./routes/route');
 const cors = require('cors'); // Import middleware cors
 const app = express();
-const Sequelize = require('sequelize');
-const SequelizeStore = require('connect-session-sequelize');
 
-const sessionStore = SequelizeStore(session.Store);
-
-const db = new Sequelize('webprofile_builder_api', 'root', '', {
-    host: "localhost",
-    dialect: "mysql"
-});
-const store = new sessionStore({
-    db: db
-});
-app.use(session({
-    secret: process.env.ACCESS_TOKEN_SECRET,
-    resave: false,
-    saveUninitialized: true,
-    store: store,
-    cookie: {
-        secure: 'auto',
-        httpOnly: true
-    }
-}));
-
+app.use(cookieParser());
 app.use(express.json());
 app.use(cors({
     credentials: true,

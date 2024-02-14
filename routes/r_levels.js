@@ -14,7 +14,7 @@ const {
 router.post("/level",authenticate, adminOnly, post_levels);
 router.put("/level/:level_uuid",authenticate, adminOnly, put_levels);
 router.delete("/level/:level_uuid",authenticate, adminOnly, delete_levels);
-router.get("/level/get_all", authenticate, adminOnly, get_all_levels);
+router.get("/level/get_all",authenticate, adminOnly, get_all_levels);
 router.get("/level/get_unique",authenticate, adminOnly, get_unique_levels);
 router.get("/level/get_count",authenticate, adminOnly,  get_count_levels);
 router.get("/level/:level_uuid",authenticate, adminOnly, get_detail_level);

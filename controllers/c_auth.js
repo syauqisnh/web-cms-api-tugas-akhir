@@ -3,6 +3,7 @@ const tbl_user = db.tbl_user;
 const tbl_customer = db.tbl_customer;
 const tbl_levels = db.tbl_levels;
 const tbl_media = db.tbl_media;
+const jwt = require('jsonwebtoken');
 const bcrypt = require("bcrypt");
 const Joi = require('joi');
 const { Op } = require('sequelize');
@@ -17,90 +18,118 @@ const customerSchema = Joi.object({
 });
 
 const Login = async (req, res) => {
-  let uuidUser = null;
-  let name_user = null;
-  let email_user = null;
+  let uuid
+  let name
+  let email
+  let password
+  
   try {
-    const user = await tbl_customer.findOne({
-      where: {
-        customer_email: req.body.email,
-      },
-    });
-    const user_admin = await tbl_user.findOne({
-      where: {
-        user_email: req.body.email,
-      },
-    });
-    if (!user && !user_admin) {
-      return res.status(404).json({ msg: "Akun Anda tidak terdaftar!" });
-    } else if (user_admin) {
-      const match = await bcrypt.compare(
-        req.body.password,
-        user_admin.user_password
+      const user_customer = await tbl_customer.findOne({
+          where: {
+              customer_email: req.body.email,
+          },
+      });
+
+      const user_admin = await tbl_user.findOne({
+          where: {
+              user_email: req.body.email,
+          },
+      });
+
+      if (!user_customer && !user_admin) {
+          return res.status(404).json({ msg: "Akun Anda tidak terdaftar!" });
+      }
+
+      if (user_customer) {
+          const match = await bcrypt.compare(
+              req.body.password,
+              user_customer.customer_password
+          );
+          if (!match) {
+              return res.status(400).json({ msg: "Password User Anda salah" });
+          }
+          name = user_customer.customer_username
+          email = user_customer.customer_email
+          uuid = user_customer.customer_uuid
+          password = user_customer.customer_password
+      }
+
+      if (user_admin) {
+          const match = await bcrypt.compare(
+              req.body.password,
+              user_admin.user_password
+          );
+          if (!match) {
+              return res.status(400).json({ msg: "Password User Anda salah" });
+          }
+          name = user_admin.user_username
+          email = user_admin.user_email
+          uuid = user_admin.user_uuid
+          password = user_admin.user_password    
+      }
+
+      const token = jwt.sign(
+          {
+              uuid, 
+              email,
+              password,
+          }, process.env.JWT_SECRET, {expiresIn: '10m'}
       );
-      if (!match)
-        return res.status(400).json({ msg: "Password Admin Anda salah" });
-      uuidUser = user_admin.user_uuid;
-      name_user = user_admin.user_username;
-      email_user = user_admin.user_email;
-    } else if (user) {
-      const match = await bcrypt.compare(
-        req.body.password,
-        user.customer_password
-      );
-      if (!match)
-        return res.status(400).json({ msg: "Password User Anda salah" });
-      uuidUser = user.customer_uuid;
-      name_user = user.customer_username;
-      email_user = user.customer_email;
-    }
-    req.session.userUuid = uuidUser;
-    const name = name_user;
-    const email = email_user;
-    res.status(200).json({ name, email });
+
+      // Set cookie
+      res.cookie('token', token, { httpOnly: true });
+      res.status(200).json({ name, email });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ msg: "Terjadi kesalahan pada server" });
+      console.error(error);
+      res.status(500).json({ msg: "Terjadi kesalahan pada server" });
   }
 };
 
 const Me = async (req, res) =>{
-    if(!req.session.userUuid){
-        return res.status(401).json({msg: "Mohon login ke akun Anda!"});
-    }
-    try {
-        const user = await tbl_customer.findOne({
-            attributes:['customer_uuid', 'customer_username'],
-            where: {
-                customer_uuid: req.session.userUuid
-            }
-            });
-            
-            const user_admin = await tbl_user.findOne({
-                attributes:['user_uuid', 'user_username'],
-                where: {
-                    user_uuid: req.session.userUuid
-                }
-            });
-        if (!user && !user_admin) { 
-            return res.status(404).json({ msg: "User tidak ditemukan" });
-        } else if (user_admin) {
-            const uuid = user_admin['user_uuid'];
-            const name = user_admin['user_username'];
-            const level = 'administrator';
-            res.status(200).json({ uuid, name, level,});
-        } else if (user) {
-            const uuid = user['customer_uuid'];
-            const name = user['customer_username'];
-            const level = 'customer';
-            res.status(200).json({ uuid, name, level,});
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ msg: "Terjadi kesalahan pada server", error });
-    }
-}
+  let uuid
+  let name
+  let level
+  
+  const token = req.cookies.token;
+  if (!token) {
+      return res.status(401).json({ msg: "Tidak ada token JWT yang ditemukan di cookie!" });
+  }
 
+  try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      uuid = decoded.uuid;
+
+      const user_customer = await tbl_customer.findOne({
+          attributes:['customer_uuid', 'customer_username'],
+          where: {
+              customer_uuid: uuid
+          }
+      });
+      
+      const user_admin = await tbl_user.findOne({
+          attributes:['user_uuid', 'user_username'],
+          where: {
+              user_uuid: uuid
+          }
+      });
+      
+      if (!user_customer && !user_admin) { 
+          return res.status(404).json({ msg: "User tidak ditemukan" });
+      } else if (user_admin) {
+          name = user_admin['user_username'];
+          level = 'administrator';
+      } else if (user_customer) {
+          name = user_customer['customer_username'];
+          level = 'customer';
+      }
+
+      res.status(200).json({ uuid, name, level });
+  } catch (error) {
+      console.error(error);
+      res.clearCookie('token');
+      res.status(500).json({ msg: "Terjadi kesalahan pada server", error });
+  }
+}
 
 const registrasi_customer = async (req, res) => {
   try {
@@ -208,10 +237,8 @@ const registrasi_customer = async (req, res) => {
 
 
 const logOut = (req, res) => {
-  req.session.destroy((err) => {
-    if (err) return res.status(400).json({ msg: "Tidak dapat logout" });
-    res.status(200).json({ msg: "Anda telah logout" });
-  });
+  res.clearCookie('token');
+  res.status(200).json({ msg: "Anda telah berhasil logout" });
 };
 
 module.exports = { Login, registrasi_customer, logOut, Me };
