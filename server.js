@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const fileUpload = require('express-fileupload')
 const route = require('./routes/route');
 const cors = require('cors'); // Import middleware cors
 const app = express();
@@ -19,7 +20,7 @@ app.use('/uploads/video', express.static('uploads/video/'));
 app.use('/uploads/excel', express.static('uploads/excel/'));
  
 app.listen(process.env.PORT, () => {
-    console.log('Sedang Berjalan di port 9900');
+    console.log('Server Running');
 });
 
 

@@ -33,7 +33,6 @@ const authenticate = async (req, res, next) =>{
         req.userUuid = uuid;
         next();
     } catch (error) {
-        // Penanganan kesalahan pada query database atau lainnya
         console.error(error);
         res.status(500).json({ msg: "Terjadi kesalahan pada server" });
     }

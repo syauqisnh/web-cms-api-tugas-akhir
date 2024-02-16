@@ -13,6 +13,8 @@ const r_scope = require('./r_scope');
 const r_price_list = require('./r_price_list');
 const r_tnc = require('./r_tnc');
 const r_galleries = require('./r_galleries');
+const r_payments = require("./r_payments");
+const r_payments_via = require("./r_payments_via");
 
 router.use("/api/v1", r_auth);
 router.use("/api/v1", r_levels);
@@ -28,5 +30,7 @@ router.use('/api/v1', r_scope);
 router.use('/api/v1', r_price_list);
 router.use('/api/v1', r_tnc);
 router.use('/api/v1', r_galleries);
+router.use("/api/v1", r_payments);
+router.use("/api/v1", r_payments_via);
 
 module.exports = router;

@@ -42,6 +42,21 @@ const querySchema = Joi.object({
     ).optional()
 });
 
+const customerLogin = Joi.object({
+    limit: Joi.number().integer().min(1).optional(),
+    page: Joi.number().integer().min(1).optional(),
+    keyword: Joi.string().trim().optional(),
+    filter: Joi.object({
+        customer_username: Joi.alternatives().try(
+            Joi.string().trim(),
+            Joi.array().items(Joi.string().trim())
+        ).optional()
+    }).optional(),
+    order: Joi.object().pattern(
+        Joi.string(), Joi.string().valid('asc', 'desc', 'ASC', 'DESC')
+    ).optional()
+});
+
 const uuidSchema = Joi.object({
     customer_uuid: Joi.string().guid({ version: 'uuidv4' }).required()
 });
@@ -167,7 +182,6 @@ const post_customer = async (req, res) => {
         });
     }
 }
-
 
 const put_customer = async (req, res) => {
     try {
@@ -609,6 +623,18 @@ const get_count_customer = async (req, res) => {
         });
       }
 }
+
+// const get_all_byCustomerLogin = async (req, res) => {
+//     const {error, value} = customerLogin.validate(req.query)
+//     if (error) {
+//         return res.status(400).json({
+//             success: false,
+//             message: error.details[0].message,
+//             data: null
+//         });
+//     }
+
+// }
 
 module.exports = {
     post_customer,
