@@ -2,7 +2,16 @@ const db = require("../models");
 const tbl_payments = db.tbl_payments;
 const { v4: uuidv4} = require("uuid");
 const Sequelize = require("sequelize");
-const Joi = require("joi");
+// const Joi = require("joi");
+
+// const schemaPayments = Joi.object({
+//     payment_via: Joi.string().required(),
+//     payment_from_bank: Joi.string().required(),
+//     payment_from_name: Joi.string().required(),
+//     payment_from_to: Joi.string().required(),
+//     payment_pricing_selected: Joi.string().required(),
+
+// })
 
 const post_payment = async (req, res) => {
     try {
