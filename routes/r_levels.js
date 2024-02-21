@@ -11,7 +11,7 @@ const {
   get_count_levels
 } = require("../controllers/c_levels");
 
-router.post("/level",authenticate, adminOnly, post_levels);
+router.post("/level", post_levels);
 router.put("/level/:level_uuid",authenticate, adminOnly, put_levels);
 router.delete("/level/:level_uuid",authenticate, adminOnly, delete_levels);
 router.get("/level/get_all",authenticate, adminOnly, get_all_levels);

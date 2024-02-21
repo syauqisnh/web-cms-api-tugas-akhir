@@ -73,7 +73,7 @@ const Login = async (req, res) => {
               uuid, 
               email,
               password,
-          }, process.env.JWT_SECRET, {expiresIn: '10m'}
+          }, process.env.JWT_SECRET, {expiresIn: process.env.JWT_EXPIRE_IN}
       );
 
       // Set cookie

@@ -5,11 +5,15 @@ const Sequelize = require("sequelize");
 const Joi = require("joi");
 
 const levelSchema = Joi.object({
-  level_name: Joi.string().required(),
+  level_name: Joi.string().required().messages({
+    'string.empty': 'Nama tidak boleh kosong',
+  }),
 });
 
 const updateLevelSchema = Joi.object({
-  level_name: Joi.string().required(), 
+  level_name: Joi.string().required().messages({
+    'string.empty': 'Nama tidak boleh kosong',
+  }),
 });
 
 const uuidSchema = Joi.object({
