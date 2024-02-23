@@ -5,11 +5,15 @@ const Sequelize = require('sequelize');
 const Joi = require("joi");
 
 const permissionSchema = Joi.object({
-    permission_name: Joi.string().required(),
+    permission_name: Joi.string().required().messages({
+        'string.empty': 'Nama tidak boleh kosong',
+      }),
   });
   
   const updatePermissionSchema = Joi.object({
-    permission_name: Joi.string().required(), 
+    permission_name: Joi.string().required().messages({
+        'string.empty': 'Nama tidak boleh kosong',
+      }), 
   });
   
   const uuidSchema = Joi.object({

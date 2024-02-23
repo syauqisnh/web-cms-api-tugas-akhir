@@ -10,17 +10,29 @@ const { Op } = require('sequelize');
 const Joi = require('joi');
 
 const customerSchema = Joi.object({
-    customer_username: Joi.string().required(),
-    customer_full_name: Joi.string().required(),
+    customer_username: Joi.string().required().messages({
+        'string.empty': 'Username tidak boleh kosong',
+    }),
+    customer_full_name: Joi.string().required().messages({
+        'string.empty': 'Nama lengkap tidak boleh kosong',
+    }),
     customer_nohp: Joi.string().allow('').min(10).max(14),
     customer_address: Joi.string().allow(''),
-    customer_email: Joi.string().email().required(),
-    customer_password: Joi.string().min(8).required(),
+    customer_email: Joi.string().email().required().messages({
+        'string.empty': 'Email tidak boleh kosong',
+    }),
+    customer_password: Joi.string().min(8).required().messages({
+        'string.empty': 'Password tidak boleh kosong',
+    }),
 });
 
 const updateCustomerSchema = Joi.object({
-    customer_username: Joi.string(),
-    customer_full_name: Joi.string(),
+    customer_username: Joi.string().required().messages({
+        'string.empty': 'Username tidak boleh kosong',
+    }),
+    customer_full_name: Joi.string().required().messages({
+        'string.empty': 'Nama lengkap tidak boleh kosong',
+    }),
     customer_nohp: Joi.string().allow('').min(10).max(14),
     customer_address: Joi.string().allow(''),
     // customer_email: Joi.string().email(),
@@ -42,20 +54,20 @@ const querySchema = Joi.object({
     ).optional()
 });
 
-const customerLogin = Joi.object({
-    limit: Joi.number().integer().min(1).optional(),
-    page: Joi.number().integer().min(1).optional(),
-    keyword: Joi.string().trim().optional(),
-    filter: Joi.object({
-        customer_username: Joi.alternatives().try(
-            Joi.string().trim(),
-            Joi.array().items(Joi.string().trim())
-        ).optional()
-    }).optional(),
-    order: Joi.object().pattern(
-        Joi.string(), Joi.string().valid('asc', 'desc', 'ASC', 'DESC')
-    ).optional()
-});
+// const customerLogin = Joi.object({
+//     limit: Joi.number().integer().min(1).optional(),
+//     page: Joi.number().integer().min(1).optional(),
+//     keyword: Joi.string().trim().optional(),
+//     filter: Joi.object({
+//         customer_username: Joi.alternatives().try(
+//             Joi.string().trim(),
+//             Joi.array().items(Joi.string().trim())
+//         ).optional()
+//     }).optional(),
+//     order: Joi.object().pattern(
+//         Joi.string(), Joi.string().valid('asc', 'desc', 'ASC', 'DESC')
+//     ).optional()
+// });
 
 const uuidSchema = Joi.object({
     customer_uuid: Joi.string().guid({ version: 'uuidv4' }).required()

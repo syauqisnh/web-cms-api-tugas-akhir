@@ -8,15 +8,27 @@ const Sequelize = require("sequelize");
 const Joi = require('joi');
 
 const accessSchema = Joi.object({
-  access_modul: Joi.string().required(),
-  access_permission: Joi.string().required(),
-  access_level: Joi.string().required(),
+  access_modul: Joi.string().required().messages({
+    'string.empty': 'Modul tidak boleh kosong',
+  }),
+  access_permission: Joi.string().required().messages({
+    'string.empty': 'permission tidak boleh kosong',
+  }),
+  access_level: Joi.string().required().messages({
+    'string.empty': 'level tidak boleh kosong',
+  }),
 });
 
 const updateAccessSchema = Joi.object({
-  access_modul: Joi.string().required(),
-  access_permission: Joi.string().required(),
-  access_level: Joi.string().required(),
+  access_modul: Joi.string().required().messages({
+    'string.empty': 'Modul tidak boleh kosong',
+  }),
+  access_permission: Joi.string().required().messages({
+    'string.empty': 'permission tidak boleh kosong',
+  }),
+  access_level: Joi.string().required().messages({
+    'string.empty': 'level tidak boleh kosong',
+  }),
 });
 
 const uuidAccessSchema = Joi.object({

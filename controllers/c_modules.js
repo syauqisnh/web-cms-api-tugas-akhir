@@ -5,11 +5,15 @@ const Sequelize = require("sequelize");
 const Joi = require("joi");
 
 const moduleSchema = Joi.object({
-  module_name: Joi.string().required(),
+  module_name: Joi.string().required().messages({
+    'string.empty': 'Nama tidak boleh kosong',
+  }),
 });
 
 const updatemoduleSchema = Joi.object({
-  module_name: Joi.string().required(), 
+  module_name: Joi.string().required().messages({
+    'string.empty': 'Nama tidak boleh kosong',
+  }),
 });
 
 const uuidSchema = Joi.object({

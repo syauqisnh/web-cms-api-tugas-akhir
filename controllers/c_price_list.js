@@ -8,22 +8,46 @@ const { Op } = require("sequelize");
 const Sequelize = require("sequelize");
 
 const priceSchema = Joi.object({
-  price_list_name: Joi.string().required(),
-  price_list_price: Joi.number().required(),
-  price_list_desc: Joi.string().required(),
-  price_list_status: Joi.string().valid("Y", "N").default("N").required(),
-  price_list_order: Joi.string().required(),
-  price_list_business: Joi.string().required(),
+  price_list_name: Joi.string().required().messages({
+    'string.empty': 'Name tidak boleh kosong',
+  }),
+  price_list_price: Joi.number().required().messages({
+    'string.empty': 'Harga tidak boleh kosong',
+  }),
+  price_list_desc: Joi.string().required().messages({
+    'string.empty': 'Deskripsi tidak boleh kosong',
+  }),
+  price_list_status: Joi.string().valid("Y", "N").default("N").required().messages({
+    'string.empty': 'Status tidak boleh kosong',
+  }),
+  price_list_order: Joi.string().required().messages({
+    'string.empty': 'order tidak boleh kosong',
+  }),
+  price_list_business: Joi.string().required().messages({
+    'string.empty': 'Bisnis tidak boleh kosong',
+  }),
   price_list_media: Joi.string().required(),
 });
 
 const priceSchemaUpdate = Joi.object({
-  price_list_name: Joi.string(),
-  price_list_price: Joi.number(),
-  price_list_desc: Joi.string(),
-  price_list_status: Joi.string().valid("Y", "N").default("N").required(),
-  price_list_order: Joi.string(),
-  price_list_business: Joi.string(),
+  price_list_name: Joi.string().required().messages({
+    'string.empty': 'Name tidak boleh kosong',
+  }),
+  price_list_price: Joi.number().required().messages({
+    'string.empty': 'Harga tidak boleh kosong',
+  }),
+  price_list_desc: Joi.string().required().messages({
+    'string.empty': 'Deskripsi tidak boleh kosong',
+  }),
+  price_list_status: Joi.string().valid("Y", "N").default("N").required().messages({
+    'string.empty': 'Status tidak boleh kosong',
+  }),
+  price_list_order: Joi.string().required().messages({
+    'string.empty': 'order tidak boleh kosong',
+  }),
+  price_list_business: Joi.string().required().messages({
+    'string.empty': 'Bisnis tidak boleh kosong',
+  }),
 });
 
 const uuidSchema = Joi.object({

@@ -8,13 +8,21 @@ const { Op } = require("sequelize");
 const Sequelize = require("sequelize");
 
 const priceSchema = Joi.object({
-  tnc_uuid_table: Joi.string().required(),
-  tnc_name: Joi.string().required(),
+  tnc_uuid_table: Joi.string().required().messages({
+    'string.empty': 'Harga tidak boleh kosong',
+  }),
+  tnc_name: Joi.string().required().messages({
+    'string.empty': 'Name tidak boleh kosong',
+  }),
 });
 
 const priceSchemaUpdate = Joi.object({
-  tnc_uuid_table: Joi.string().required(),
-  tnc_name: Joi.string().required(),
+  tnc_uuid_table: Joi.string().required().messages({
+    'string.empty': 'Harga tidak boleh kosong',
+  }),
+  tnc_name: Joi.string().required().messages({
+    'string.empty': 'Name tidak boleh kosong',
+  }),
 });
 
 const uuidSchema = Joi.object({

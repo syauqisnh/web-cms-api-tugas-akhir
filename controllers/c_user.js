@@ -10,21 +10,33 @@ const { Op } = require("sequelize");
 const Joi = require("joi");
 
 const userSchema = Joi.object({
-  user_username: Joi.string().required(),
-  user_full_name: Joi.string().required(),
+  user_username: Joi.string().required().messages({
+    'string.empty': 'Username tidak boleh kosong',
+  }),
+  user_full_name: Joi.string().required().messages({
+    'string.empty': 'Nama lengkap tidak boleh kosong',
+  }),
   user_nohp: Joi.string().allow("").min(10).max(14),
   user_address: Joi.string().allow(""),
-  user_email: Joi.string().email().required(),
-  user_password: Joi.string().min(8).required(),
+  user_email: Joi.string().email().required().messages({
+    'string.empty': 'Email tidak boleh kosong',
+  }),
+  user_password: Joi.string().min(8).required().messages({
+    'string.empty': 'Password tidak boleh kosong',
+  }),
 });
 
 const updateuserSchema = Joi.object({
-  user_username: Joi.string(),
-  user_full_name: Joi.string(),
+  user_username: Joi.string().required().messages({
+    'string.empty': 'Username tidak boleh kosong',
+  }),
+  user_full_name: Joi.string().required().messages({
+    'string.empty': 'Nama lengkap tidak boleh kosong',
+  }),
   user_nohp: Joi.string().allow("").min(10).max(14),
   user_address: Joi.string().allow(""),
-  user_email: Joi.string().email(),
-  user_password: Joi.string().min(8),
+  // user_email: Joi.string().email(),
+  // user_password: Joi.string().min(8),
 });
 
 const querySchema = Joi.object({

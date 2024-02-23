@@ -7,15 +7,27 @@ const Sequelize = require("sequelize");
 const Joi = require("joi");
 
 const galleriesSchema = Joi.object({
-    gallery_name: Joi.string().required(),
-    gallery_desc: Joi.string().required(),
-    gallery_business: Joi.string().required(),
+    gallery_name: Joi.string().required().messages({
+      'string.empty': 'Name tidak boleh kosong',
+    }),
+    gallery_desc: Joi.string().required().messages({
+      'string.empty': 'deskripsi tidak boleh kosong',
+    }),
+    gallery_business: Joi.string().required().messages({
+      'string.empty': 'Bisnis tidak boleh kosong',
+    }),
 });
 
 const galleriesUpdateSchema = Joi.object({
-  gallery_name: Joi.string().required(),
-  gallery_desc: Joi.string().required(),
-  gallery_business: Joi.string().required(),
+  gallery_name: Joi.string().required().messages({
+    'string.empty': 'Name tidak boleh kosong',
+  }),
+  gallery_desc: Joi.string().required().messages({
+    'string.empty': 'deskripsi tidak boleh kosong',
+  }),
+  gallery_business: Joi.string().required().messages({
+    'string.empty': 'Bisnis tidak boleh kosong',
+  }),
 });
 
 const querySchema = Joi.object({

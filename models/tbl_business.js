@@ -16,6 +16,13 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'CASCADE',
       });
 
+      tbl_business.belongsTo(models.tbl_user, {
+        foreignKey: "business_customer",
+        targetKey: "user_uuid",
+        as: "business_user_as",
+        onDelete: 'CASCADE',
+      });
+
       tbl_business.belongsTo(models.tbl_media, {
         foreignKey: "business_media",
         targetKey: "media_uuid",

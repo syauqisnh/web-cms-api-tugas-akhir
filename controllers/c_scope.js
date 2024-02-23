@@ -7,15 +7,27 @@ const Joi = require("joi");
 const { Op } = require("sequelize");
 
 const scopeSchema = Joi.object({
-  scope_name: Joi.string().required(),
-  scope_desc: Joi.string().required(),
-  scope_business: Joi.string().required(),
+  scope_name: Joi.string().required().messages({
+    'string.empty': 'Name tidak boleh kosong',
+  }),
+  scope_desc: Joi.string().required().messages({
+    'string.empty': 'Deskripsi tidak boleh kosong',
+  }),
+  scope_business: Joi.string().required().messages({
+    'string.empty': 'Bisnis tidak boleh kosong',
+  }),
 });
 
 const updateScopeSchema = Joi.object({
-  scope_name: Joi.string().required(),
-  scope_desc: Joi.string().required(),
-  scope_business: Joi.string().required(),
+  scope_name: Joi.string().required().messages({
+    'string.empty': 'Name tidak boleh kosong',
+  }),
+  scope_desc: Joi.string().required().messages({
+    'string.empty': 'Deskripsi tidak boleh kosong',
+  }),
+  scope_business: Joi.string().required().messages({
+    'string.empty': 'Bisnis tidak boleh kosong',
+  }),
 });
 
 const uuidSchema = Joi.object({

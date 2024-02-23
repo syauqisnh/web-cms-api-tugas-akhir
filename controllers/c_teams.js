@@ -9,18 +9,34 @@ const Joi = require("joi");
 const { Op } = require("sequelize");
 
 const teamsSchema = Joi.object({
-  team_name: Joi.string().required(),
-  team_job_desc: Joi.string().required(),
-  team_scope: Joi.string().required(),
-  team_business: Joi.string().required(),
+  team_name: Joi.string().required().messages({
+    'string.empty': 'Name tidak boleh kosong',
+  }),
+  team_job_desc: Joi.string().required().messages({
+    'string.empty': 'Deskripsi tidak boleh kosong',
+  }),
+  team_scope: Joi.string().required().messages({
+    'string.empty': 'Scope tidak boleh kosong',
+  }),
+  team_business: Joi.string().required().messages({
+    'string.empty': 'Bisnis tidak boleh kosong',
+  }),
   team_media: Joi.string().guid({ version: "uuidv4" }).required(),
 });
 
 const updateTeamsSchema = Joi.object({
-  team_name: Joi.string().required(),
-  team_job_desc: Joi.string().required(),
-  team_scope: Joi.string().required(),
-  team_business: Joi.string().required(),
+  team_name: Joi.string().required().messages({
+    'string.empty': 'Name tidak boleh kosong',
+  }),
+  team_job_desc: Joi.string().required().messages({
+    'string.empty': 'Deskripsi tidak boleh kosong',
+  }),
+  team_scope: Joi.string().required().messages({
+    'string.empty': 'Scope tidak boleh kosong',
+  }),
+  team_business: Joi.string().required().messages({
+    'string.empty': 'Bisnis tidak boleh kosong',
+  }),
 });
 
 const uuidSchema = Joi.object({

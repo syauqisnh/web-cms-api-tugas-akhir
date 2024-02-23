@@ -298,7 +298,7 @@ const get_all_levels = async (req, res) => {
         ? { [Sequelize.Op.and]: [whereClause.level_name, keywordClause] }
         : keywordClause;
     }
-
+    
     const data = await tbl_levels.findAndCountAll({
       where: whereClause,
       order: [[orderField, orderDirection]],
@@ -327,8 +327,8 @@ const get_all_levels = async (req, res) => {
     };
 
     if (data.count === 0) {
-      return res.status(404).json({
-        success: false,
+      return res.status(200).json({
+        success: true,
         message: "Data Tidak Ditemukan",
         data: null,
         pages: {

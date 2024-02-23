@@ -34,7 +34,8 @@
     "mysql2": "^3.6.1",
     "nodemon": "^3.0.1",
     "path": "^0.12.7",
-    "sequelize": "^6.33.0"
+    "sequelize": "^6.33.0",
+    "sweetalert2": "^11.10.5"
   },
   "devDependencies": {
     "@types/aos": "^3.0.7",

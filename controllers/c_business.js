@@ -10,28 +10,64 @@ const Joi = require("joi");
 const { Op } = require("sequelize");
 
 const businessSchema = Joi.object({
-  business_name: Joi.string().required(),
-  business_desc: Joi.string().required(),
-  business_province: Joi.string().required(),
-  business_regency: Joi.string().required(),
-  business_subdistrict: Joi.string().required(),
-  business_address: Joi.string().required(),
-  business_notelp: Joi.string().min(10).max(14).required(),
-  business_email: Joi.string().email().required(),
-  business_link_wa: Joi.string().required(),
+  business_name: Joi.string().required().messages({
+    'string.empty': 'Nama tidak boleh kosong',
+  }),
+  business_desc: Joi.string().required().messages({
+    'string.empty': 'Deskripsi tidak boleh kosong',
+  }),
+  business_province: Joi.string().required().messages({
+    'string.empty': 'Provinsi tidak boleh kosong',
+  }),
+  business_regency: Joi.string().required().messages({
+    'string.empty': 'Kabupaten tidak boleh kosong',
+  }),
+  business_subdistrict: Joi.string().required().messages({
+    'string.empty': 'Kecamatan tidak boleh kosong',
+  }),
+  business_address: Joi.string().required().messages({
+    'string.empty': 'Alamat tidak boleh kosong',
+  }),
+  business_notelp: Joi.string().min(10).max(14).required().messages({
+    'string.empty': 'Kontak tidak boleh kosong',
+  }),
+  business_email: Joi.string().email().required().messages({
+    'string.empty': 'Email tidak boleh kosong',
+  }),
+  business_link_wa: Joi.string().required().messages({
+    'string.empty': 'Link WA tidak boleh kosong',
+  }),
   business_media: Joi.string().guid({ version: "uuidv4" }).required(),
 });
 
 const updateBusinessSchema = Joi.object({
-  business_name: Joi.string(),
-  business_desc: Joi.string(),
-  business_province: Joi.string(),
-  business_regency: Joi.string(),
-  business_subdistrict: Joi.string(),
-  business_address: Joi.string(),
-  business_notelp: Joi.string().min(10).max(14),
-  business_email: Joi.string().email(),
-  business_link_wa: Joi.string(),
+  business_name: Joi.string().required().messages({
+    'string.empty': 'Nama tidak boleh kosong',
+  }),
+  business_desc: Joi.string().required().messages({
+    'string.empty': 'Deskripsi tidak boleh kosong',
+  }),
+  business_province: Joi.string().required().messages({
+    'string.empty': 'Provinsi tidak boleh kosong',
+  }),
+  business_regency: Joi.string().required().messages({
+    'string.empty': 'Kabupaten tidak boleh kosong',
+  }),
+  business_subdistrict: Joi.string().required().messages({
+    'string.empty': 'Kecamatan tidak boleh kosong',
+  }),
+  business_address: Joi.string().required().messages({
+    'string.empty': 'Alamat tidak boleh kosong',
+  }),
+  business_notelp: Joi.string().min(10).max(14).required().messages({
+    'string.empty': 'Kontak tidak boleh kosong',
+  }),
+  business_email: Joi.string().email().required().messages({
+    'string.empty': 'Email tidak boleh kosong',
+  }),
+  business_link_wa: Joi.string().required().messages({
+    'string.empty': 'Link WA tidak boleh kosong',
+  }),
   // business_media: Joi.string().required(),
 });
 
@@ -101,7 +137,6 @@ const post_business = async (req, res) => {
     }
 
     let uuid;
-    // Ambil ID customer dari sesi atau token
     const token = req.cookies.token;
     if (!token) {
       return res.status(401).json({
@@ -113,7 +148,6 @@ const post_business = async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     uuid = decoded.uuid;
 
-    // Cek apakah ID customer tersebut ada
     const administrator = await tbl_user.findOne({
       attributes: ["user_uuid", "user_username"],
       where: {
@@ -135,8 +169,6 @@ const post_business = async (req, res) => {
       });
     }
 
-    // console.log("DATAAA", administrator);
-
     const {
       business_name,
       business_desc,
@@ -149,24 +181,6 @@ const post_business = async (req, res) => {
       business_link_wa,
       business_media,
     } = value;
-
-    const existingBusiness = await tbl_business.findOne({
-      where: {
-        [Op.or]: [
-          { business_email: business_email },
-          { business_notelp: business_notelp },
-        ],
-        business_delete_at: null,
-      },
-    });
-
-    if (existingBusiness) {
-      return res.status(400).json({
-        success: false,
-        message: "Data sudah digunakan, silakan gunakan email lain.",
-        data: existingBusiness,
-      });
-    }
 
     const business_uuid = uuidv4();
 
@@ -554,6 +568,17 @@ const get_all_business = async (req, res) => {
           ],
         },
         {
+          model: tbl_user,
+          as: "business_user_as",
+          attributes: [
+            "user_uuid",
+            "user_full_name",
+            "user_nohp",
+            "user_email",
+            "user_address",
+          ],
+        },
+        {
           model: tbl_media,
           as: "business_media_as",
           attributes: [
@@ -583,15 +608,22 @@ const get_all_business = async (req, res) => {
         business_email: business.business_email,
         business_link_wa: business.business_link_wa,
         business_customer: business.business_customer_as
-          ? {
-              customer_uuid: business.business_customer_as.customer_uuid,
-              customer_full_name:
-                business.business_customer_as.customer_full_name,
-              customer_nohp: business.business_customer_as.customer_nohp,
-              customer_email: business.business_customer_as.customer_email,
-              customer_address: business.business_customer_as.customer_address,
-            }
-          : null,
+        ? {
+            customer_uuid: business.business_customer_as.customer_uuid,
+            customer_full_name: business.business_customer_as.customer_full_name,
+            customer_nohp: business.business_customer_as.customer_nohp,
+            customer_email: business.business_customer_as.customer_email,
+            customer_address: business.business_customer_as.customer_address,
+          }
+        : business.business_user_as 
+        ? {
+            user_uuid: business.business_user_as.user_uuid,
+            user_full_name: business.business_user_as.user_full_name,
+            user_nohp: business.business_user_as.user_nohp,
+            user_email: business.business_user_as.user_email,
+            user_address: business.business_user_as.user_address,
+          }
+        : null, 
         business_media: business.business_media_as
           ? {
               media_uuid: business.business_media_as.media_uuid,
