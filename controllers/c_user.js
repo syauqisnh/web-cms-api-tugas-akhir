@@ -468,7 +468,7 @@ const get_all_user = async (req, res) => {
     };
 
     if (data.count === 0) {
-      return res.status(404).json({
+      return res.status(200).json({
         success: false,
         message: "Data Tidak Ditemukan",
         data: null,
