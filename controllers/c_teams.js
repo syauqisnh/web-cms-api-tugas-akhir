@@ -16,10 +16,10 @@ const teamsSchema = Joi.object({
     'string.empty': 'Deskripsi tidak boleh kosong',
   }),
   team_scope: Joi.string().required().messages({
-    'string.empty': 'Scope tidak boleh kosong',
+    'string.base': 'Scope tidak boleh kosong',
   }),
   team_business: Joi.string().required().messages({
-    'string.empty': 'Bisnis tidak boleh kosong',
+    'string.base': 'Bisnis tidak boleh kosong',
   }),
   team_media: Joi.string().guid({ version: "uuidv4" }).required(),
 });
@@ -32,10 +32,10 @@ const updateTeamsSchema = Joi.object({
     'string.empty': 'Deskripsi tidak boleh kosong',
   }),
   team_scope: Joi.string().required().messages({
-    'string.empty': 'Scope tidak boleh kosong',
+    'string.base': 'Scope tidak boleh kosong',
   }),
   team_business: Joi.string().required().messages({
-    'string.empty': 'Bisnis tidak boleh kosong',
+    'string.base': 'Bisnis tidak boleh kosong',
   }),
 });
 

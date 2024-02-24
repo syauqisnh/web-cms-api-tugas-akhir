@@ -266,36 +266,6 @@ const put_business = async (req, res) => {
       });
     }
 
-    const existingBusiness =
-      value.business_email || value.business_nohp
-        ? await tbl_business.findOne({
-            where: {
-              [Op.and]: [
-                {
-                  [Op.or]: [
-                    ...(value.business_email
-                      ? [{ business_email: value.business_email }]
-                      : []),
-                    ...(value.business_nohp
-                      ? [{ business_nohp: value.business_nohp }]
-                      : []),
-                  ],
-                },
-                { business_uuid: { [Op.ne]: business_uuid } },
-              ],
-            },
-          })
-        : null;
-
-    if (existingBusiness) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Email atau nomor telepon sudah digunakan, silakan gunakan yang lain.",
-        data: null,
-      });
-    }
-
     const update_business = await tbl_business.findOne({
       where: { business_uuid },
     });

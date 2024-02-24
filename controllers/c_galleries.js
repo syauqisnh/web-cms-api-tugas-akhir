@@ -48,6 +48,10 @@ const uuidSchema = Joi.object({
   gallery_uuid: Joi.string().guid({ version: "uuidv4" }).required(),
 });
 
+const querySchemaUniqe = Joi.object({
+  field: Joi.string().required().pattern(new RegExp("^[a-zA-Z0-9,_]+$")),
+});
+
 const post_galleries = async (req, res) => {
     try {
         const { error, value } = galleriesSchema.validate(req.body);
@@ -468,6 +472,48 @@ const get_all_galleries = async (req, res) => {
 };
 
 const get_unique_galleries = async (req, res) => {
+  const { error, value } = querySchemaUniqe.validate(req.query);
+  if (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.details[0].message,
+      data: null
+    });
+  }
+
+  const { field } = value;
+  const fieldsArray = field.split(",");
+  const tableAttributes = tbl_galleries.rawAttributes;
+  const invalidFields = fieldsArray.filter((f) => !(f in tableAttributes));
+
+  if (invalidFields.length > 0) {
+    return res.status(200).json({
+      success: false,
+      message: "Gagal mendapatkan data",
+      data: null,
+    });
+  }
+
+  const uniqeValues = {};
+
+  for (const f of fieldsArray) {
+    const values = await tbl_galleries.findAll({
+      attributes: [[Sequelize.fn("DISTINCT", Sequelize.col(f)), f]],
+      where: {
+        gallery_delete_at: null,
+      }
+    });
+
+    if ( values && values.length > 0) {
+      uniqeValues[f] = values.map((item) => item[f]);
+    }
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: "Sukses mendapatkan data",
+    data: uniqeValues,
+  })
 };
 
 const get_count_galleries = async (req, res) => {

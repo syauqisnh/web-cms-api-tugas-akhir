@@ -14,7 +14,7 @@ const scopeSchema = Joi.object({
     'string.empty': 'Deskripsi tidak boleh kosong',
   }),
   scope_business: Joi.string().required().messages({
-    'string.empty': 'Bisnis tidak boleh kosong',
+    'string.base': 'Bisnis tidak boleh kosong',
   }),
 });
 
@@ -26,7 +26,7 @@ const updateScopeSchema = Joi.object({
     'string.empty': 'Deskripsi tidak boleh kosong',
   }),
   scope_business: Joi.string().required().messages({
-    'string.empty': 'Bisnis tidak boleh kosong',
+    'string.base': 'Bisnis tidak boleh kosong',
   }),
 });
 
