@@ -519,7 +519,7 @@ const get_all_tnc = async (req, res) => {
     };
 
     if (data.count === 0) {
-      return res.status(404).json({
+      return res.status(200).json({
         success: false,
         message: "Data Tidak Ditemukan",
         data: null,
@@ -829,7 +829,7 @@ const get_tnc_byPriceList = async (req, res) => {
     };
 
     if (data.count === 0) {
-      return res.status(404).json({
+      return res.status(200).json({
         success: false,
         message: "Data Tidak Ditemukan",
         data: null,
