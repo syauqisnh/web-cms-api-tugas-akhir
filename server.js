@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const fileUpload = require('express-fileupload')
+// const fileUpload = require('express-fileupload')
 const route = require('./routes/route');
 const cors = require('cors'); // Import middleware cors
 const app = express();

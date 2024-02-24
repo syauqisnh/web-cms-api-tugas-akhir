@@ -25,9 +25,9 @@ module.exports = (sequelize, DataTypes) => {
         as: "team_scope_as",
       });
 
-      tbl_teams.belongsTo(models.tbl_media, {
-        foreignKey: 'team_media',
-        targetKey: 'media_uuid', 
+      tbl_teams.hasOne(models.tbl_media, {
+        foreignKey: 'media_uuid_table',
+        sourceKey: 'team_uuid',
         as: "team_media_as",
       });
     }

@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require("uuid");
 const multer = require("multer");
 const path = require("path");
 const Joi = require("joi");
+const fs = require('fs');
 
 const uuidSchema = Joi.object({
   table_uuid: Joi.string().guid({ version: "uuidv4" }).required(),
@@ -124,6 +125,98 @@ const post_upload_media = async (req, res) => {
       res.status(200).json({
         message: "File berhasil diupload",
         data: newMedia,
+      });
+    } catch (dbError) {
+      res.status(500).json({ message: dbError.message });
+    }
+  });
+};
+
+const post_profile_teams = async (req, res) => {
+  upload.any()(req, res, async (error) => {
+    if (error) {
+      return res.status(500).json({ message: error.message });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).send("File tidak ditemukan.");
+    }
+
+    try {
+      const { value } = uuidSchema.validate(req.params);
+      const { table_uuid } = value;
+
+      // Cek apakah sudah ada media gambar terkait dengan tabel UUID
+      const existingMedia = await tbl_media.findOne({
+        where: {
+          media_uuid_table: table_uuid,
+          media_category: 'img' // Hanya cek untuk kategori gambar
+        }
+      });
+
+      if (existingMedia) {
+        // Mendapatkan nama file yang akan dihapus
+        const fileNameToDelete = existingMedia.media_hash_name;
+
+        // Hapus data media yang sudah ada dari database
+        await tbl_media.destroy({
+          where: {
+            media_uuid_table: table_uuid,
+            media_category: 'img'
+          }
+        });
+
+        // Hapus file dari sistem file
+        const filePath = `./uploads/img/${fileNameToDelete}`; // Ganti dengan path sesuai dengan struktur penyimpanan Anda
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            console.error("Error deleting file:", err);
+          } else {
+            console.log("File deleted successfully");
+          }
+        });
+      }
+
+      const uploadedMedia = [];
+
+      for (const file of req.files) {
+        const media_uuid = uuidv4();
+        const extensi = path.extname(file.originalname);
+        const size = file.size;
+
+        let subdir = "";
+        if (file.mimetype.includes("image")) {
+          subdir = "img";
+        }
+
+        if (!subdir) {
+          return res.status(400).send("Tipe file tidak didukung.");
+        }
+
+        const url = `${req.protocol}://${req.get("host")}/uploads/${subdir}/${file.filename}`;
+
+        const newMedia = await tbl_media.create({
+          media_uuid: media_uuid,
+          media_uuid_table: table_uuid,
+          media_table: "Teams",
+          media_name: file.originalname,
+          media_hash_name: file.filename,
+          media_category: subdir,
+          media_extensi: extensi.slice(1),
+          media_size: size.toString(),
+          media_url: url,
+          media_metadata: JSON.stringify({
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+          }),
+        });
+
+        uploadedMedia.push(newMedia);
+      }
+
+      res.status(200).json({
+        message: "File berhasil diupload",
+        data: uploadedMedia,
       });
     } catch (dbError) {
       res.status(500).json({ message: dbError.message });
@@ -327,7 +420,7 @@ const get_all_media = async (req, res) => {
   }
 };
 
-const get_all_media_Byalbum = async (req, res) => {
+const get_detail_media = async (req, res) => {
   try {
     const { value } = uuidSchema.validate(req.params);
     const { table_uuid } = value;
@@ -451,6 +544,7 @@ const get_all_media_Byalbum = async (req, res) => {
 module.exports = {
   get_all_media,
   post_upload_media,
+  post_profile_teams,
   post_upload_media_any,
-  get_all_media_Byalbum,
+  get_detail_media,
 };
