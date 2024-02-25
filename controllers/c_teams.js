@@ -21,7 +21,6 @@ const teamsSchema = Joi.object({
   team_scope: Joi.string().required().messages({
     'string.base': 'Scope tidak boleh kosong',
   }),
-  team_media: Joi.string().guid({ version: "uuidv4" }).required(),
 });
 
 const updateTeamsSchema = Joi.object({
@@ -100,7 +99,7 @@ const post_teams = async (req, res) => {
       });
     }
 
-    const { team_name, team_job_desc, team_scope, team_business, team_media } =
+    const { team_name, team_job_desc, team_scope, team_business } =
       value;
 
     // Mencari bisnis dengan UUID
@@ -142,7 +141,6 @@ const post_teams = async (req, res) => {
       team_job_desc: team_job_desc,
       team_scope: team_scope,
       team_business: team_business,
-      team_media: team_media,
     });
 
     if (!new_teams) {
@@ -155,23 +153,17 @@ const post_teams = async (req, res) => {
 
     const update_media = await tbl_media.findOne({
       where: {
-        media_uuid: team_media,
+        media_uuid: team_uuid,
       },
     });
 
-    if (!update_media) {
-      return res.status(404).json({
-        success: false,
-        message: "team tidak ditemukan",
-        data: null,
-      });
-    } else {
+    if (update_media) {
       await update_media.update({
-        media_uuid_table: team_uuid || update_media.media_uuid_table,
-        media_table: "teams" || update_media.media_table,
-        team_update_at: new Date(),
+          media_uuid_table: team_uuid || update_media.media_uuid_table,
+          media_table: "teams" || update_media.media_table,
+          team_update_at: new Date(),
       });
-    }
+  }
     res.status(200).json({
       success: true,
       message: "Sukses menambah data",
@@ -303,32 +295,47 @@ const delete_teams = async (req, res) => {
       success: false,
       message: error.details[0].message,
       data: null,
-    })
+    });
   }
 
   const { team_uuid } = value;
 
-  const delete_teams = await tbl_teams.findOne({
-    where: {
-      team_uuid,
+  try {
+    const deletedTeam = await tbl_teams.findOne({
+      where: {
+        team_uuid,
+      },
+    });
+
+    if (!deletedTeam) {
+      return res.status(400).json({
+        success: false,
+        message: 'Gagal menghapus data',
+        data: null,
+      });
     }
-  })
-  
-  if (!delete_teams) {
-    return res.status(400).json({
+    
+    await deletedTeam.update({ team_delete_at: new Date() });
+
+    await tbl_media.update(
+      { media_delete_at: new Date() },
+      { where: { media_uuid_table: team_uuid, media_table: "Teams" } }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Sukses Menghapus Data',
+    });
+  } catch (error) {
+    console.error('Error saat menghapus data teams:', error);
+    res.status(500).json({
       success: false,
-      message: 'Gagal menghapus data',
-      data: null,
-    })
+      message: 'Terjadi kesalahan saat menghapus data teams',
+      error: error.message,
+    });
   }
-
-  await delete_teams.update({ team_delete_at: new Date() });
-
-  res.status(200).json({
-    success: true,
-    message: 'Sukses Menghapus Data'
-  })
 };
+
 
 const get_detail_teams = async (req, res) => {
   const { error, value } = uuidSchema.validate(req.params);

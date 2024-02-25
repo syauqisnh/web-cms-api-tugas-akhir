@@ -11,6 +11,10 @@ const uuidSchema = Joi.object({
   table_uuid: Joi.string().guid({ version: "uuidv4" }).required(),
 });
 
+const uuidSchemaMedia = Joi.object({
+  media_uuid: Joi.string().guid({ version: "uuidv4" }).required(),
+});
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     let dest = "./uploads/";
@@ -302,6 +306,49 @@ const post_upload_media_any = async (req, res) => {
   });
 };
 
+const delete_media = async (req, res) => {
+  try {
+    const { error, value } = uuidSchemaMedia.validate(req.params)
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        data: null,
+      })
+    }
+
+    const { media_uuid } = value;
+
+    const delete_media = await tbl_media.findOne({
+      where: {
+        media_uuid
+      }
+    })
+
+    if (!delete_media) {
+      return res.status(400).json({
+        success: false,
+        message: 'Gagal menghapus data',
+        data: null,
+      })
+    }
+
+    await delete_media.update({ media_delete_at: new Date() });
+
+    res.status(200).json({
+      success: true,
+      message: 'Sukses Menghapus Data'
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Internal Server Error',
+      data: null
+    })
+  }
+}
+
 const get_all_media = async (req, res) => {
   try {
     const {
@@ -507,7 +554,7 @@ const get_detail_media = async (req, res) => {
     };
 
     if (data.count === 0) {
-      return res.status(404).json({
+      return res.status(200).json({
         success: false,
         message: "Data Tidak Ditemukan",
         data: null,
@@ -545,6 +592,7 @@ module.exports = {
   get_all_media,
   post_upload_media,
   post_profile_teams,
+  delete_media,
   post_upload_media_any,
   get_detail_media,
 };

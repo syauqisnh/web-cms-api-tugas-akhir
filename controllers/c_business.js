@@ -341,7 +341,7 @@ const delete_business = async (req, res) => {
     if (!delete_business) {
       return res.status(404).json({
         success: false,
-        message: "Gagal menghapus data pelanggan",
+        message: "Gagal menghapus data",
         data: null,
       });
     }

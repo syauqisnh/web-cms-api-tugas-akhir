@@ -12,7 +12,7 @@ const priceSchema = Joi.object({
     'string.empty': 'Name tidak boleh kosong',
   }),
   price_list_price: Joi.number().required().messages({
-    'string.empty': 'Harga tidak boleh kosong',
+    'number.base': 'Harga tidak boleh kosong',
   }),
   price_list_desc: Joi.string().required().messages({
     'string.empty': 'Deskripsi tidak boleh kosong',
@@ -21,10 +21,10 @@ const priceSchema = Joi.object({
     'string.empty': 'Status tidak boleh kosong',
   }),
   price_list_order: Joi.string().required().messages({
-    'string.empty': 'order tidak boleh kosong',
+    'string.empty': 'Urutan tidak boleh kosong',
   }),
   price_list_business: Joi.string().required().messages({
-    'string.empty': 'Bisnis tidak boleh kosong',
+    'string.base': 'Bisnis tidak boleh kosong',
   }),
   price_list_media: Joi.string().required(),
 });
@@ -34,7 +34,7 @@ const priceSchemaUpdate = Joi.object({
     'string.empty': 'Name tidak boleh kosong',
   }),
   price_list_price: Joi.number().required().messages({
-    'string.empty': 'Harga tidak boleh kosong',
+    'number.base': 'Harga tidak boleh kosong',
   }),
   price_list_desc: Joi.string().required().messages({
     'string.empty': 'Deskripsi tidak boleh kosong',
@@ -43,10 +43,10 @@ const priceSchemaUpdate = Joi.object({
     'string.empty': 'Status tidak boleh kosong',
   }),
   price_list_order: Joi.string().required().messages({
-    'string.empty': 'order tidak boleh kosong',
+    'string.empty': 'Urutan tidak boleh kosong',
   }),
   price_list_business: Joi.string().required().messages({
-    'string.empty': 'Bisnis tidak boleh kosong',
+    'string.base': 'Bisnis tidak boleh kosong',
   }),
 });
 
