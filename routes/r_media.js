@@ -8,6 +8,7 @@ const {
     post_upload_media_any,
     get_detail_media,
     delete_media,
+    get_detail_mediabymediauuid,
 } = require('../controllers/c_media');
 
 router.get('/media/get_all', get_all_media);
@@ -16,5 +17,6 @@ router.post('/media/upload_media', post_upload_media);
 router.post('/media/upload_media_any/:table_uuid', post_upload_media_any);
 router.delete('/media/:media_uuid', delete_media);
 router.get('/media/:table_uuid', get_detail_media);
+router.get('/medias/:media_uuid', get_detail_mediabymediauuid);
 
 module.exports = router;

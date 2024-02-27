@@ -519,7 +519,7 @@ const get_all_price_list = async (req, res) => {
         {
           model: tbl_media,
           as: "price_media_as",
-          attributes: ["media_uuid", "media_name", "media_hash_name"],
+          attributes: ["media_uuid", "media_name", "media_hash_name",  "media_url"],
         },
       ],
     });
@@ -553,6 +553,7 @@ const get_all_price_list = async (req, res) => {
               media_uuid: price.price_media_as.media_uuid,
               media_name: price.price_media_as.media_name,
               media_hash_name: price.price_media_as.media_hash_name,
+              media_url: price.price_media_as.media_url,
             }
           : null,
       })),
