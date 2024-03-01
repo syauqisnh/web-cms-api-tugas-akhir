@@ -58,7 +58,6 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Inisialisasi upload
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
@@ -127,6 +126,198 @@ const post_upload_media = async (req, res) => {
       });
 
       res.status(200).json({
+        message: "File berhasil diupload",
+        data: newMedia,
+      });
+    } catch (dbError) {
+      res.status(500).json({ message: dbError.message });
+    }
+  });
+};
+
+const post_media_business = async (req, res) => {
+  upload.array("file")(req, res, async (error) => {
+    if (error) {
+      return res.status(500).json({ message: error.message });
+    }
+    if (req.files.length > 1) {
+      return res.status(400).send("Hanya satu file saja yang dapat diupload");
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).send("File Tidak Ditemukan");
+    }
+
+    try {
+      const { value } = uuidSchema.validate(req.params);
+      const { table_uuid } = value;
+
+      const uploadedFile = req.files[0]; // Hanya satu file yang diupload
+      const extensi = path.extname(uploadedFile.originalname);
+      const size = uploadedFile.size;
+
+      let subdir = "";
+      if (uploadedFile.mimetype.includes("image")) {
+        subdir = "img";
+      } else if (uploadedFile.mimetype.includes("pdf")) {
+        subdir = "pdf";
+      } else if (
+        uploadedFile.mimetype.includes("word") ||
+        uploadedFile.mimetype.includes("office")
+      ) {
+        subdir = "doc";
+      } else if (uploadedFile.mimetype.includes("video")) {
+        subdir = "video";
+      } else if (uploadedFile.mimetype.includes("excel")) {
+        subdir = "excel";
+      }
+    
+      // Pastikan subdirektori tidak kosong
+      if (!subdir) {
+        return res.status(400).send("Tipe file tidak didukung.");
+      }
+
+      // Menghapus media yang sudah ada sebelumnya, jika ada
+      const existingMedia = await tbl_media.findOne({
+        where: {
+          media_uuid_table: table_uuid,
+        }
+      });
+
+      if (existingMedia) {
+        const filePath = `./uploads/${existingMedia.media_category}/${existingMedia.media_hash_name}`;
+        fs.unlink(filePath, (error) => {
+          if (error) {
+            console.error('Gagal menghapus file lama:', error);
+          } else {
+            console.log('File lama berhasil dihapus');
+          }
+        });
+
+        await tbl_media.destroy({
+          where: {
+            media_uuid_table: table_uuid,
+          }
+        });
+      }
+
+      const media_uuid = uuidv4();
+      const url = `${req.protocol}://${req.get("host")}/uploads/${subdir}/${uploadedFile.filename}`;
+
+      const newMedia = await tbl_media.create({
+        media_uuid: media_uuid,
+        media_uuid_table: table_uuid,
+        media_table: "business",
+        media_name: uploadedFile.originalname,
+        media_hash_name: uploadedFile.filename,
+        media_category: subdir,
+        media_extensi: extensi.slice(1),
+        media_size: size.toString(),
+        media_url: url,
+        media_metadata: JSON.stringify({
+          originalname: uploadedFile.originalname,
+          mimetype: uploadedFile.mimetype,
+        }),
+      });
+
+      res.status(200).json({
+        status: true,
+        message: "File berhasil diupload",
+        data: newMedia,
+      });
+    } catch (dbError) {
+      res.status(500).json({ message: dbError.message });
+    }
+  });
+};
+
+const post_media_price = async (req, res) => {
+  upload.array("file")(req, res, async (error) => {
+    if (error) {
+      return res.status(500).json({ message: error.message });
+    }
+    if (req.files.length > 1) {
+      return res.status(400).send("Hanya satu file saja yang dapat diupload");
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).send("File Tidak Ditemukan");
+    }
+
+    try {
+      const { value } = uuidSchema.validate(req.params);
+      const { table_uuid } = value;
+
+      const uploadedFile = req.files[0]; // Hanya satu file yang diupload
+      const extensi = path.extname(uploadedFile.originalname);
+      const size = uploadedFile.size;
+
+      let subdir = "";
+      if (uploadedFile.mimetype.includes("image")) {
+        subdir = "img";
+      } else if (uploadedFile.mimetype.includes("pdf")) {
+        subdir = "pdf";
+      } else if (
+        uploadedFile.mimetype.includes("word") ||
+        uploadedFile.mimetype.includes("office")
+      ) {
+        subdir = "doc";
+      } else if (uploadedFile.mimetype.includes("video")) {
+        subdir = "video";
+      } else if (uploadedFile.mimetype.includes("excel")) {
+        subdir = "excel";
+      }
+    
+      // Pastikan subdirektori tidak kosong
+      if (!subdir) {
+        return res.status(400).send("Tipe file tidak didukung.");
+      }
+
+      // Menghapus media yang sudah ada sebelumnya, jika ada
+      const existingMedia = await tbl_media.findOne({
+        where: {
+          media_uuid_table: table_uuid,
+        }
+      });
+
+      if (existingMedia) {
+        const filePath = `./uploads/${existingMedia.media_category}/${existingMedia.media_hash_name}`;
+        fs.unlink(filePath, (error) => {
+          if (error) {
+            console.error('Gagal menghapus file lama:', error);
+          } else {
+            console.log('File lama berhasil dihapus');
+          }
+        });
+
+        await tbl_media.destroy({
+          where: {
+            media_uuid_table: table_uuid,
+          }
+        });
+      }
+
+      const media_uuid = uuidv4();
+      const url = `${req.protocol}://${req.get("host")}/uploads/${subdir}/${uploadedFile.filename}`;
+
+      const newMedia = await tbl_media.create({
+        media_uuid: media_uuid,
+        media_uuid_table: table_uuid,
+        media_table: "price_list",
+        media_name: uploadedFile.originalname,
+        media_hash_name: uploadedFile.filename,
+        media_category: subdir,
+        media_extensi: extensi.slice(1),
+        media_size: size.toString(),
+        media_url: url,
+        media_metadata: JSON.stringify({
+          originalname: uploadedFile.originalname,
+          mimetype: uploadedFile.mimetype,
+        }),
+      });
+
+      res.status(200).json({
+        status: true,
         message: "File berhasil diupload",
         data: newMedia,
       });
@@ -227,102 +418,6 @@ const post_profile_teams = async (req, res) => {
         status: true,
         message: "File berhasil diupload",
         data: uploadedMedia,
-      });
-    } catch (dbError) {
-      res.status(500).json({ message: dbError.message });
-    }
-  });
-};
-
-const post_media_all = async (req, res) => {
-  upload.array("file")(req, res, async (error) => {
-    if (error) {
-      return res.status(500).json({ message: error.message });
-    }
-    if (req.files.length > 1) {
-      return res.status(400).send("Hanya satu file saja yang dapat diupload");
-    }
-
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).send("File Tidak Ditemukan");
-    }
-
-    try {
-      const { value } = uuidSchema.validate(req.params);
-      const { table_uuid } = value;
-
-      const uploadedFile = req.files[0]; // Hanya satu file yang diupload
-      const extensi = path.extname(uploadedFile.originalname);
-      const size = uploadedFile.size;
-
-      let subdir = "";
-      if (uploadedFile.mimetype.includes("image")) {
-        subdir = "img";
-      } else if (uploadedFile.mimetype.includes("pdf")) {
-        subdir = "pdf";
-      } else if (
-        uploadedFile.mimetype.includes("word") ||
-        uploadedFile.mimetype.includes("office")
-      ) {
-        subdir = "doc";
-      } else if (uploadedFile.mimetype.includes("video")) {
-        subdir = "video";
-      } else if (uploadedFile.mimetype.includes("excel")) {
-        subdir = "excel";
-      }
-    
-      // Pastikan subdirektori tidak kosong
-      if (!subdir) {
-        return res.status(400).send("Tipe file tidak didukung.");
-      }
-
-      // Menghapus media yang sudah ada sebelumnya, jika ada
-      const existingMedia = await tbl_media.findOne({
-        where: {
-          media_uuid_table: table_uuid,
-        }
-      });
-
-      if (existingMedia) {
-        const filePath = `./uploads/${existingMedia.media_category}/${existingMedia.media_hash_name}`;
-        fs.unlink(filePath, (error) => {
-          if (error) {
-            console.error('Gagal menghapus file lama:', error);
-          } else {
-            console.log('File lama berhasil dihapus');
-          }
-        });
-
-        await tbl_media.destroy({
-          where: {
-            media_uuid_table: table_uuid,
-          }
-        });
-      }
-
-      const media_uuid = uuidv4();
-      const url = `${req.protocol}://${req.get("host")}/uploads/${subdir}/${uploadedFile.filename}`;
-
-      const newMedia = await tbl_media.create({
-        media_uuid: media_uuid,
-        media_uuid_table: table_uuid,
-        media_table: "business",
-        media_name: uploadedFile.originalname,
-        media_hash_name: uploadedFile.filename,
-        media_category: subdir,
-        media_extensi: extensi.slice(1),
-        media_size: size.toString(),
-        media_url: url,
-        media_metadata: JSON.stringify({
-          originalname: uploadedFile.originalname,
-          mimetype: uploadedFile.mimetype,
-        }),
-      });
-
-      res.status(200).json({
-        status: true,
-        message: "File berhasil diupload",
-        data: newMedia,
       });
     } catch (dbError) {
       res.status(500).json({ message: dbError.message });
@@ -819,7 +914,8 @@ module.exports = {
   get_all_media,
   post_upload_media,
   post_profile_teams,
-  post_media_all,
+  post_media_price,
+  post_media_business,
   delete_media,
   post_upload_media_any,
   get_detail_media,

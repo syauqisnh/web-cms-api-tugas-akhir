@@ -74,7 +74,6 @@ const uuidSchema = Joi.object({
   business_uuid: Joi.string().guid({ version: "uuidv4" }).required(),
 });
 
-
 const querySchema = Joi.object({
   limit: Joi.number().integer().min(1).optional(),
   page: Joi.number().integer().min(1).optional(),

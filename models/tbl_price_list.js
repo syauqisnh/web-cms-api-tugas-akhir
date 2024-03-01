@@ -14,9 +14,9 @@ module.exports = (sequelize, DataTypes) => {
         as: "price_business_as",
       });
 
-      tbl_price_list.belongsTo(models.tbl_media, {
-        foreignKey: 'price_list_media',
-        targetKey: 'media_uuid', 
+      tbl_price_list.hasOne(models.tbl_media, {
+        foreignKey: 'media_uuid_table',
+        sourceKey: 'price_list_uuid', 
         as: "price_media_as",
       });
     }

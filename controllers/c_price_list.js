@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require("uuid");
 const Joi = require("joi");
 const { Op } = require("sequelize");
 const Sequelize = require("sequelize");
+const fs = require("fs")
 
 const priceSchema = Joi.object({
   price_list_name: Joi.string().required().messages({
@@ -26,7 +27,6 @@ const priceSchema = Joi.object({
   price_list_business: Joi.string().required().messages({
     'string.base': 'Bisnis tidak boleh kosong',
   }),
-  price_list_media: Joi.string().required(),
 });
 
 const priceSchemaUpdate = Joi.object({
@@ -150,7 +150,6 @@ const post_price_list = async (req, res) => {
       price_list_status: price_list_status,
       price_list_order: price_list_order,
       price_list_business: price_list_business,
-      price_list_media: price_list_media,
     });
 
     if (!create_price_list) {
@@ -159,41 +158,35 @@ const post_price_list = async (req, res) => {
         message: "Gagal menambahkan data",
         data: null,
       });
-    } else {
-      const update_media = await tbl_media.findOne({
-        where: {
-          media_uuid: price_list_media,
-        },
-      });
-
-      if (!update_media) {
-        return res.status(404).json({
-          success: false,
-          message: "Bisnis tidak ditemukan",
-          data: null,
-        });
-      } else {
-        await update_media.update({
-          media_uuid_table: price_list_uuid || update_media.media_uuid_table,
-          media_table: "price_list" || update_media.media_table,
-          price_list_update_at: new Date(),
-        });
-
-        res.status(200).json({
-          success: true,
-          message: "Berhasil menambahkan data bisnis",
-          data: {
-            price_list_uuid: create_price_list.price_list_uuid,
-            price_list_name: create_price_list.price_list_name,
-            price_list_price: create_price_list.price_list_price,
-            price_list_desc: create_price_list.price_list_desc,
-            price_list_status: create_price_list.price_list_status,
-            price_list_order: create_price_list.price_list_order,
-            price_list_business: create_price_list.price_list_business,
-          },
-        });
-      }
     }
+
+    const update_media = await tbl_media.findOne({
+      where: {
+        media_uuid: price_list_uuid,
+      },
+    });
+
+    if (update_media) {
+      await update_media.update({
+        media_uuid_table: price_list_uuid || update_media.media_uuid_table,
+        media_table: "price_list" || update_media.media_table,
+        price_list_update_at: new Date(),
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Berhasil menambahkan data bisnis",
+      data: {
+        price_list_uuid: create_price_list.price_list_uuid,
+        price_list_name: create_price_list.price_list_name,
+        price_list_price: create_price_list.price_list_price,
+        price_list_desc: create_price_list.price_list_desc,
+        price_list_status: create_price_list.price_list_status,
+        price_list_order: create_price_list.price_list_order,
+        price_list_business: create_price_list.price_list_business,
+      },
+    });
   } catch (error) {
     console.log(error, "Data Error");
     res.status(500).json({
@@ -313,6 +306,36 @@ const delete_price_list = async (req, res) => {
         data: null,
       });
     }
+
+    const deleteMedia = await tbl_media.findAll({
+      where: {
+        media_uuid_table: price_list_uuid,
+        media_table: 'price_list'
+      }
+    })
+
+    for (const media of deleteMedia) {
+      const filePath = `./uploads/${media.media_category}/${media.media_hash_name}`;
+      fs.unlink(filePath, (error) => {
+        if (error) {
+          console.error('File gagal di hapus:', error)
+        } else {
+          console.log('Sukses menghapus file')
+        }
+      })
+    }
+
+    await tbl_media.update(
+      {
+        media_delete_at: new Date()
+      },
+      {
+        where: {
+          media_uuid_table: price_list_uuid,
+          media_table: 'price_list'
+        }
+      }
+    )
 
     await delete_price_list.update({ price_list_delete_at: new Date() });
 
