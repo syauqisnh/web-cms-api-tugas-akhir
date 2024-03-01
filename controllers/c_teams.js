@@ -7,6 +7,7 @@ const { v4: uuidv4 } = require("uuid");
 const Sequelize = require("sequelize");
 const Joi = require("joi");
 const { Op } = require("sequelize");
+const fs = require('fs');
 
 const teamsSchema = Joi.object({
   team_name: Joi.string().required().messages({
@@ -314,13 +315,40 @@ const delete_teams = async (req, res) => {
         data: null,
       });
     }
-    
-    await deletedTeam.update({ team_delete_at: new Date() });
+
+    const deleteMedia = await tbl_media.findAll({
+      where: { 
+          media_uuid_table: team_uuid, 
+          media_table: "teams" 
+      }
+    })
+
+    for (const media of deleteMedia) {
+      const filePath = `./uploads/${media.media_category}/${media.media_hash_name}`;
+      fs.unlink(filePath, (error) => {
+        if (error) {
+          console.error('Gagal Menghapus File:', error)
+        } else {
+          console.log('Sukses menghapus file')
+        }
+      })
+    }
 
     await tbl_media.update(
-      { media_delete_at: new Date() },
-      { where: { media_uuid_table: team_uuid, media_table: "Teams" } }
+      { 
+        media_delete_at: new Date(),
+      },
+      {
+        where: {
+          media_uuid_table: team_uuid,
+          media_table: "teams"
+        }
+      }
     );
+    
+    await deletedTeam.update({ 
+      team_delete_at: new Date() 
+    });
 
     res.status(200).json({
       success: true,
@@ -335,7 +363,6 @@ const delete_teams = async (req, res) => {
     });
   }
 };
-
 
 const get_detail_teams = async (req, res) => {
   const { error, value } = uuidSchema.validate(req.params);

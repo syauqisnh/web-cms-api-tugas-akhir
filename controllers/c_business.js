@@ -8,6 +8,7 @@ const { v4: uuidv4 } = require("uuid");
 const Sequelize = require("sequelize");
 const Joi = require("joi");
 const { Op } = require("sequelize");
+const fs = require('fs');
 
 const businessSchema = Joi.object({
   business_name: Joi.string().required().messages({
@@ -37,7 +38,6 @@ const businessSchema = Joi.object({
   business_link_wa: Joi.string().required().messages({
     'string.empty': 'Link WA tidak boleh kosong',
   }),
-  business_media: Joi.string().guid({ version: "uuidv4" }).required(),
 });
 
 const updateBusinessSchema = Joi.object({
@@ -68,16 +68,12 @@ const updateBusinessSchema = Joi.object({
   business_link_wa: Joi.string().required().messages({
     'string.empty': 'Link WA tidak boleh kosong',
   }),
-  // business_media: Joi.string().required(),
 });
 
 const uuidSchema = Joi.object({
   business_uuid: Joi.string().guid({ version: "uuidv4" }).required(),
 });
 
-// const uuidCustomer = Joi.object({
-//   business_customer: Joi.string().guid({ version: "uuidv4" }).required(),
-// });
 
 const querySchema = Joi.object({
   limit: Joi.number().integer().min(1).optional(),
@@ -179,7 +175,6 @@ const post_business = async (req, res) => {
       business_notelp,
       business_email,
       business_link_wa,
-      business_media,
     } = value;
 
     const business_uuid = uuidv4();
@@ -196,7 +191,6 @@ const post_business = async (req, res) => {
       business_email: business_email,
       business_link_wa: business_link_wa,
       business_customer: uuid,
-      business_media: business_media,
     });
 
     if (!create_business) {
@@ -205,44 +199,38 @@ const post_business = async (req, res) => {
         message: "Gagal menambahkan data",
         data: null,
       });
-    } else {
-      const update_media = await tbl_media.findOne({
-        where: {
-          media_uuid: business_media,
-        },
+    } 
+
+    const update_media = await tbl_media.findOne({
+      where: {
+        media_uuid: business_uuid,
+      },
+    });
+
+    if (update_media) {
+      await update_media.update({
+        media_uuid_table: business_uuid || update_media.media_uuid_table,
+        media_table: "business" || update_media.media_table,
+        business_update_at: new Date(),
       });
-
-      if (!update_media) {
-        return res.status(404).json({
-          success: false,
-          message: "Bisnis tidak ditemukan",
-          data: null,
-        });
-      } else {
-        await update_media.update({
-          media_uuid_table: business_uuid || update_media.media_uuid_table,
-          media_table: "business" || update_media.media_table,
-          business_update_at: new Date(),
-        });
-
-        res.status(200).json({
-          success: true,
-          message: "Berhasil menambahkan data bisnis",
-          data: {
-            business_uuid: create_business.business_uuid,
-            business_name: create_business.business_name,
-            business_desc: create_business.business_desc,
-            business_province: create_business.business_province,
-            business_regency: create_business.business_regency,
-            business_subdistrict: create_business.business_subdistrict,
-            business_address: create_business.business_address,
-            business_notelp: create_business.business_notelp,
-            business_email: create_business.business_email,
-            business_link_wa: create_business.business_link_wa,
-          },
-        });
-      }
     }
+
+    res.status(200).json({
+      success: true,
+      message: "Berhasil menambahkan data bisnis",
+      data: {
+        business_uuid: create_business.business_uuid,
+        business_name: create_business.business_name,
+        business_desc: create_business.business_desc,
+        business_province: create_business.business_province,
+        business_regency: create_business.business_regency,
+        business_subdistrict: create_business.business_subdistrict,
+        business_address: create_business.business_address,
+        business_notelp: create_business.business_notelp,
+        business_email: create_business.business_email,
+        business_link_wa: create_business.business_link_wa,
+      },
+    });
   } catch (error) {
     console.log(error, "Data Error");
     return res.status(500).json({
@@ -346,12 +334,40 @@ const delete_business = async (req, res) => {
       });
     }
 
-    await delete_business.update({ business_delete_at: new Date() });
+    const deleteMedia = await tbl_media.findAll({
+      where: {
+        media_uuid_table: business_uuid,
+        media_table: 'business'
+      }
+    })
 
+    for (const media of deleteMedia) {
+      const filePath = `./uploads/${media.media_category}/${media.media_hash_name}`;
+      fs.unlink(filePath, (error) => {
+        if (error) {
+          console.error('File gagal di hapus:', error)
+        } else {
+          console.log('Sukses menambahkan data')
+        }
+      })
+    }
+    
     await tbl_media.update(
-      { media_delete_at: new Date() },
-      { where: { media_uuid_table: business_uuid, media_table: "business" } }
+      { 
+        media_delete_at: new Date() 
+      },
+      { 
+        where: { 
+          media_uuid_table: business_uuid, 
+          media_table: "business" 
+      } 
+      }
     );
+
+    await delete_business.update({ 
+      business_delete_at: new Date() 
+    });
+
 
     res.json({
       success: true,
