@@ -176,7 +176,7 @@ const post_price_list = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Berhasil menambahkan data bisnis",
+      message: "Berhasil menambahkan data",
       data: {
         price_list_uuid: create_price_list.price_list_uuid,
         price_list_name: create_price_list.price_list_name,
