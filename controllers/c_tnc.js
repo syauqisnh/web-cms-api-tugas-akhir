@@ -2,6 +2,8 @@ const db = require("../models");
 const tbl_tnc = db.tbl_tnc;
 const tbl_business = db.tbl_business;
 const tbl_price_list = db.tbl_price_list;
+const tbl_customer = db.tbl_customer;
+const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const Joi = require("joi");
 const { Op } = require("sequelize");
@@ -678,7 +680,32 @@ const get_tnc_byPriceList = async (req, res) => {
       });
     }
 
-    const customerUuid = req.session.userUuid;
+    let uuid;
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Tidak ada token JWT yang ditemukan di cookie!",
+      });
+    }
+
+    const customerUuid = jwt.verify(token, process.env.JWT_SECRET);
+    uuid = customerUuid.uuid;
+
+    const customer = await tbl_customer.findOne({
+      attributes: ["customer_uuid", "customer_username"],
+      where: {
+        customer_uuid: uuid,
+      },
+    });
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "User Tidak DI Temukan",
+        data: null,
+      });
+    }
 
     const {
       tnc_business = null,
@@ -709,7 +736,7 @@ const get_tnc_byPriceList = async (req, res) => {
         },
         Sequelize.where(
           Sequelize.col("tnc_business_as.business_customer"),
-          customerUuid
+          uuid
         ),
       ],
     };

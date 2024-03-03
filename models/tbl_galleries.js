@@ -8,9 +8,10 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      tbl_galleries.hasOne(models.tbl_media, {
+      tbl_galleries.hasMany(models.tbl_media, {
         foreignKey: 'media_uuid_table',
         sourceKey: 'gallery_uuid',
+        as: "gallery_media_as",
       });
 
       tbl_galleries.belongsTo(models.tbl_business, {
@@ -32,6 +33,7 @@ module.exports = (sequelize, DataTypes) => {
       gallery_name: DataTypes.STRING,
       gallery_desc: DataTypes.STRING,
       gallery_business: DataTypes.STRING,
+      gallery_media: DataTypes.STRING,
       gallery_create_at: DataTypes.DATE,
       gallery_update_at: DataTypes.DATE,
       gallery_delete_at: DataTypes.DATE,

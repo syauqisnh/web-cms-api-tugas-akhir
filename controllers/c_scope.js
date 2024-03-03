@@ -1,10 +1,12 @@
 const db = require("../models");
 const tbl_scopes = db.tbl_scopes;
 const tbl_business = db.tbl_business;
+const tbl_customer = db.tbl_customer;
 const { v4: uuidv4 } = require("uuid");
 const Sequelize = require("sequelize");
 const Joi = require("joi");
 const { Op } = require("sequelize");
+const jwt = require("jsonwebtoken");
 
 const scopeSchema = Joi.object({
   scope_name: Joi.string().required().messages({
@@ -301,13 +303,16 @@ const get_all_scope = async (req, res) => {
     }
     if (keyword) {
       const keywordClause = {
-        [Sequelize.Op.like]: `%${keyword}%`,
+        [Sequelize.Op.or]: [
+          { scope_name: { [Sequelize.Op.like]: `%${keyword}%` } },
+          { '$scope_business_as.business_name$': { [Sequelize.Op.like]: `%${keyword}%` } }
+        ]
       };
       offset = 0;
-
-      whereClause.scope_name = whereClause.scope_name
-        ? { [Sequelize.Op.and]: [whereClause.scope_name, keywordClause] }
-        : keywordClause;
+    
+      whereClause[Sequelize.Op.and] = whereClause[Sequelize.Op.and]
+        ? [...whereClause[Sequelize.Op.and], keywordClause]
+        : [keywordClause];
     }
 
     const data = await tbl_scopes.findAndCountAll({
@@ -607,7 +612,32 @@ const get_scope_byBusiness = async (req, res) => {
       });
     }
 
-    const customerUuid = req.session.userUuid;
+    let uuid;
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Tidak ada token JWT yang ditemukan di cookie!",
+      });
+    }
+
+    const customerUuid = jwt.verify(token, process.env.JWT_SECRET);
+    uuid = customerUuid.uuid;
+
+    const customer = await tbl_customer.findOne({
+      attributes: ["customer_uuid", "customer_username"],
+      where: {
+        customer_uuid: uuid,
+      },
+    });
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "User Tidak DI Temukan",
+        data: null,
+      });
+    }
 
     const {
       scope_business = null,
@@ -638,7 +668,7 @@ const get_scope_byBusiness = async (req, res) => {
         },
         Sequelize.where(
           Sequelize.col("scope_business_as.business_customer"),
-          customerUuid
+          uuid
         ),
       ],
     };
@@ -666,13 +696,16 @@ const get_scope_byBusiness = async (req, res) => {
     }
     if (keyword) {
       const keywordClause = {
-        [Sequelize.Op.like]: `%${keyword}%`,
+        [Sequelize.Op.or]: [
+          { scope_name: { [Sequelize.Op.like]: `%${keyword}%` } },
+          { '$scope_business_as.business_name$': { [Sequelize.Op.like]: `%${keyword}%` } }
+        ]
       };
       offset = 0;
-
-      whereClause.scope_name = whereClause.scope_name
-        ? { [Sequelize.Op.and]: [whereClause.scope_name, keywordClause] }
-        : keywordClause;
+    
+      whereClause[Sequelize.Op.and] = whereClause[Sequelize.Op.and]
+        ? [...whereClause[Sequelize.Op.and], keywordClause]
+        : [keywordClause];
     }
 
     const data = await tbl_scopes.findAndCountAll({
@@ -722,7 +755,6 @@ const get_scope_byBusiness = async (req, res) => {
                 scope.scope_business_as.business_subdistrict,
               business_address: scope.scope_business_as.business_address,
               business_customer: scope.scope_business_as.business_customer,
-              business_delete_at: scope.scope_business_as.business_delete_at,
             }
           : null,
       })),

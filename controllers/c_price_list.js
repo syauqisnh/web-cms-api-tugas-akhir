@@ -2,6 +2,8 @@ const db = require("../models");
 const tbl_price_list = db.tbl_price_list;
 const tbl_business = db.tbl_business;
 const tbl_media = db.tbl_media;
+const tbl_customer = db.tbl_customer;
+const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const Joi = require("joi");
 const { Op } = require("sequelize");
@@ -123,7 +125,6 @@ const post_price_list = async (req, res) => {
       price_list_status,
       price_list_order,
       price_list_business,
-      price_list_media,
     } = value;
 
     const businessValid = await tbl_business.findOne({
@@ -751,7 +752,32 @@ const get_price_byBusiness = async (req, res) => {
       });
     }
 
-    const customerUuid = req.session.userUuid;
+    let uuid;
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Tidak ada token JWT yang ditemukan di cookie!",
+      });
+    }
+
+    const customerUuid = jwt.verify(token, process.env.JWT_SECRET);
+    uuid = customerUuid.uuid;
+
+    const customer = await tbl_customer.findOne({
+      attributes: ["customer_uuid", "customer_username"],
+      where: {
+        customer_uuid: uuid,
+      },
+    });
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "User Tidak DI Temukan",
+        data: null,
+      });
+    }
 
     const {
       price_list_business = null,
@@ -782,7 +808,7 @@ const get_price_byBusiness = async (req, res) => {
         },
         Sequelize.where(
           Sequelize.col("price_business_as.business_customer"),
-          customerUuid
+          uuid
         ),
       ],
     };
@@ -842,6 +868,11 @@ const get_price_byBusiness = async (req, res) => {
             "business_customer",
           ],
         },
+        {
+          model: tbl_media,
+          as: "price_media_as",
+          attributes: ["media_uuid", "media_name", "media_hash_name",  "media_url"],
+        },
       ],
     });
 
@@ -867,6 +898,14 @@ const get_price_byBusiness = async (req, res) => {
               business_subdistrict:
                 price.price_business_as.business_subdistrict,
               business_address: price.price_business_as.business_address,
+            }
+          : null,
+          price_list_media: price.price_media_as
+          ? {
+              media_uuid: price.price_media_as.media_uuid,
+              media_name: price.price_media_as.media_name,
+              media_hash_name: price.price_media_as.media_hash_name,
+              media_url: price.price_media_as.media_url,
             }
           : null,
       })),

@@ -16,7 +16,7 @@ module.exports = (sequelize, DataTypes) => {
 
       tbl_price_list.hasOne(models.tbl_media, {
         foreignKey: 'media_uuid_table',
-        sourceKey: 'price_list_uuid', 
+        sourceKey: 'price_list_uuid',
         as: "price_media_as",
       });
     }

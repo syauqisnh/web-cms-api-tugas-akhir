@@ -449,17 +449,8 @@ const post_upload_media_any = async (req, res) => {
         let subdir = "";
         if (file.mimetype.includes("image")) {
           subdir = "img";
-        } else if (file.mimetype.includes("pdf")) {
-          subdir = "pdf";
-        } else if (
-          file.mimetype.includes("word") ||
-          file.mimetype.includes("office")
-        ) {
-          subdir = "doc";
         } else if (file.mimetype.includes("video")) {
           subdir = "video";
-        } else if (file.mimetype.includes("excel")) {
-          subdir = "excel";
         }
 
         // Pastikan subdirektori tidak kosong
@@ -476,7 +467,7 @@ const post_upload_media_any = async (req, res) => {
           media_uuid: media_uuid,
           // Sesuaikan field 'media_uuid_table' dan 'media_table' dengan data yang relevan dari request Anda
           media_uuid_table: table_uuid,
-          media_table: "Galeri",
+          media_table: "galleries",
           media_name: file.originalname,
           media_hash_name: file.filename,
           media_category: subdir, // kategori berdasarkan subdirektori
@@ -528,6 +519,23 @@ const delete_media = async (req, res) => {
         success: false,
         message: 'Gagal menghapus data',
         data: null,
+      })
+    }
+
+    const deleteMedia = await tbl_media.findAll({
+      where: {
+        media_uuid
+      }
+    })
+
+    for (const media of deleteMedia) {
+      const filePath = `./uploads/${media.media_category}/${media.media_hash_name}`;
+      fs.unlink(filePath, (error) => {
+        if (error) {
+          console.error('File gagal di hapus:', error)
+        } else {
+          console.log('Sukses menambahkan data')
+        }
       })
     }
 

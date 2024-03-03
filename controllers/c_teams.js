@@ -2,12 +2,14 @@ const db = require("../models");
 const tbl_business = db.tbl_business;
 const tbl_teams = db.tbl_teams;
 const tbl_media = db.tbl_media;
+const tbl_customer = db.tbl_customer;
 const tbl_scopes = db.tbl_scopes;
 const { v4: uuidv4 } = require("uuid");
 const Sequelize = require("sequelize");
 const Joi = require("joi");
 const { Op } = require("sequelize");
 const fs = require('fs');
+const jwt = require("jsonwebtoken");
 
 const teamsSchema = Joi.object({
   team_name: Joi.string().required().messages({
@@ -515,13 +517,17 @@ const get_all_teams = async (req, res) => {
     }
     if (keyword) {
       const keywordClause = {
-        [Sequelize.Op.like]: `%${keyword}%`,
+        [Sequelize.Op.or]: [
+          { team_name: { [Sequelize.Op.like]: `%${keyword}%` } },
+          { team_job_desc: { [Sequelize.Op.like]: `%${keyword}%` } },
+          { '$team_business_as.business_name$': { [Sequelize.Op.like]: `%${keyword}%` } }
+        ]
       };
       offset = 0;
-
-      whereClause.team_name = whereClause.team_name
-        ? { [Sequelize.Op.and]: [whereClause.team_name, keywordClause] }
-        : keywordClause;
+    
+      whereClause[Sequelize.Op.and] = whereClause[Sequelize.Op.and]
+        ? [...whereClause[Sequelize.Op.and], keywordClause]
+        : [keywordClause];
     }
 
     const data = await tbl_teams.findAndCountAll({
@@ -774,7 +780,32 @@ const get_all_byScope = async (req, res) => {
       });
     }
 
-    const customerUuid = req.session.userUuid;
+    let uuid;
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Tidak ada token JWT yang ditemukan di cookie!",
+      });
+    }
+
+    const customerUuid = jwt.verify(token, process.env.JWT_SECRET);
+    uuid = customerUuid.uuid;
+
+    const customer = await tbl_customer.findOne({
+      attributes: ["customer_uuid", "customer_username"],
+      where: {
+        customer_uuid: uuid,
+      },
+    });
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "User Tidak DI Temukan",
+        data: null,
+      });
+    }
 
     const {
       team_business = null,
@@ -805,7 +836,7 @@ const get_all_byScope = async (req, res) => {
         },
         Sequelize.where(
           Sequelize.col("team_business_as.business_customer"),
-          customerUuid
+          uuid
         ),
       ],
     };
@@ -833,14 +864,19 @@ const get_all_byScope = async (req, res) => {
     }
     if (keyword) {
       const keywordClause = {
-        [Sequelize.Op.like]: `%${keyword}%`,
+        [Sequelize.Op.or]: [
+          { team_name: { [Sequelize.Op.like]: `%${keyword}%` } },
+          { team_job_desc: { [Sequelize.Op.like]: `%${keyword}%` } },
+          { '$team_business_as.business_name$': { [Sequelize.Op.like]: `%${keyword}%` } }
+        ]
       };
       offset = 0;
-
-      whereClause.team_name = whereClause.team_name
-        ? { [Sequelize.Op.and]: [whereClause.team_name, keywordClause] }
-        : keywordClause;
+    
+      whereClause[Sequelize.Op.and] = whereClause[Sequelize.Op.and]
+        ? [...whereClause[Sequelize.Op.and], keywordClause]
+        : [keywordClause];
     }
+
 
     const data = await tbl_teams.findAndCountAll({
       where: whereClause,
