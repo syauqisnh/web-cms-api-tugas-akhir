@@ -42,6 +42,22 @@ const storage = multer.diskStorage({
   },
 });
 
+const storageImages = multer.diskStorage({
+  destination: (req, file, cb) => {
+    let dest = "./uploads/";
+    if (file.mimetype.includes("image")) {
+      dest += "img";
+    }
+    cb(null, dest);
+  },
+  filename: (req, file, cb) => {
+    cb(
+      null,
+      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
+    );
+  },
+});
+
 const fileFilter = (req, file, cb) => {
   if (
     file.mimetype === "image/jpeg" ||
@@ -60,6 +76,12 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({
   storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: 300 * 1024 * 1024 },
+});
+
+const uploaded = multer({
+  storage: storageImages, 
   fileFilter: fileFilter,
   limits: { fileSize: 300 * 1024 * 1024 },
 });
@@ -424,6 +446,194 @@ const post_profile_teams = async (req, res) => {
     }
   });
 };
+
+const post_profile_user = async (req, res) => {
+  uploaded.array("file")(req, res, async (error) => {
+    if (error) {
+      return res.status(500).json({ message: error.message });
+    }
+
+    if (req.files.length > 1) {
+      return res.status(400).send("File tidak boleh lebih dari satu.");
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).send("File tidak ditemukan.");
+    }
+
+    try {
+      const { value } = uuidSchema.validate(req.params)
+      const { table_uuid } = value
+
+      const uploadedFiles = req.files
+      for (const file of uploadedFiles) {
+        if (!file.mimetype.includes("image")) {
+          return res.status(400).send("Tipe file tidak didukung.");
+        }
+      }
+
+      const existingMedia = await tbl_media.findOne({
+        where: {
+          media_uuid_table: table_uuid,
+          media_category: 'img'
+        }
+      })
+
+      if (existingMedia) {
+        const fileNameToDelete = existingMedia.media_hash_name
+
+        await tbl_media.destroy({
+          where: {
+            media_uuid_table: table_uuid,
+            media_category: 'img'
+          }
+        })
+
+        const filePath = `./uploads/img/${fileNameToDelete}`
+
+        fs.unlink(filePath, (error) => {
+          if (error) {
+            console.error('Menghapus File:', error)
+          } else {
+            console.log('Sukses Menghapus File Sebelumnya')
+          }
+        })
+      }
+
+      const uploadedMedia = [];
+
+      for (const file of uploadedFiles) {
+        const media_uuid = uuidv4();
+        const extensi = path.extname(file.originalname);
+        const size = file.size;
+
+        const subdir = "img";
+
+        const url = `${req.protocol}://${req.get("host")}/uploads/${subdir}/${file.filename}`;
+
+        const newMedia = await tbl_media.create({
+          media_uuid: media_uuid,
+          media_uuid_table: table_uuid,
+          media_table: "user",
+          media_name: file.originalname,
+          media_hash_name: file.filename,
+          media_category: subdir,
+          media_extensi: extensi.slice(1),
+          media_size: size.toString(),
+          media_url: url,
+          media_metadata: JSON.stringify({
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+          }),
+        })
+
+        uploadedMedia.push(newMedia)
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Sukses Upload File",
+        data: uploadedMedia
+      })
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  })
+}
+
+const post_profile_customer = async (req, res) => {
+  uploaded.array("file")(req, res, async (error) => {
+    if (error) {
+      return res.status(500).json({ message: error.message });
+    }
+
+    if (req.files.length > 1) {
+      return res.status(400).send("File tidak boleh lebih dari satu.");
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).send("File tidak ditemukan.");
+    }
+
+    try {
+      const { value } = uuidSchema.validate(req.params)
+      const { table_uuid } = value
+
+      const uploadedFiles = req.files
+      for (const file of uploadedFiles) {
+        if (!file.mimetype.includes("image")) {
+          return res.status(400).send("Tipe file tidak didukung.");
+        }
+      }
+
+      const existingMedia = await tbl_media.findOne({
+        where: {
+          media_uuid_table: table_uuid,
+          media_category: 'img'
+        }
+      })
+
+      if (existingMedia) {
+        const fileNameToDelete = existingMedia.media_hash_name
+
+        await tbl_media.destroy({
+          where: {
+            media_uuid_table: table_uuid,
+            media_category: 'img'
+          }
+        })
+
+        const filePath = `./uploads/img/${fileNameToDelete}`
+
+        fs.unlink(filePath, (error) => {
+          if (error) {
+            console.error('Menghapus File:', error)
+          } else {
+            console.log('Sukses Menghapus File Sebelumnya')
+          }
+        })
+      }
+
+      const uploadedMedia = [];
+
+      for (const file of uploadedFiles) {
+        const media_uuid = uuidv4();
+        const extensi = path.extname(file.originalname);
+        const size = file.size;
+
+        const subdir = "img";
+
+        const url = `${req.protocol}://${req.get("host")}/uploads/${subdir}/${file.filename}`;
+
+        const newMedia = await tbl_media.create({
+          media_uuid: media_uuid,
+          media_uuid_table: table_uuid,
+          media_table: "customer",
+          media_name: file.originalname,
+          media_hash_name: file.filename,
+          media_category: subdir,
+          media_extensi: extensi.slice(1),
+          media_size: size.toString(),
+          media_url: url,
+          media_metadata: JSON.stringify({
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+          }),
+        })
+
+        uploadedMedia.push(newMedia)
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Sukses Upload File",
+        data: uploadedMedia
+      })
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  })
+}
 
 const post_upload_media_any = async (req, res) => {
   upload.any()(req, res, async (error) => {
@@ -922,10 +1132,12 @@ module.exports = {
   get_all_media,
   post_upload_media,
   post_profile_teams,
+  post_profile_user,
   post_media_price,
   post_media_business,
   delete_media,
   post_upload_media_any,
   get_detail_media,
   get_detail_mediabymediauuid,
+  post_profile_customer,
 };

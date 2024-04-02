@@ -415,7 +415,7 @@ const get_detail_business = async (req, res) => {
         {
           model: tbl_media,
           as: "business_media_as",
-          attributes: ["media_uuid", "media_name", "media_hash_name"],
+          attributes: ["media_uuid", "media_name", "media_hash_name", "media_url"],
         },
       ],
     });
@@ -458,8 +458,8 @@ const get_detail_business = async (req, res) => {
           ? {
               media_uuid: detail_business.business_media_as.media_uuid,
               media_name: detail_business.business_media_as.media_name,
-              media_hash_name:
-                detail_business.business_media_as.media_hash_name,
+              media_hash_name: detail_business.business_media_as.media_hash_name,
+              media_url: detail_business.business_media_as.media_url,
             }
           : null,
       },
@@ -902,6 +902,23 @@ const get_business_byCustomer = async (req, res) => {
       ],
     });
 
+    if (data.count === 0) {
+      return res.status(200).json({
+        success: false,
+        message: "Data Tidak Ditemukan",
+        data: null,
+        pages: {
+          total: 0,
+          per_page: limit || 0,
+          next_page: null,
+          to: 0,
+          last_page: 0,
+          current_page: page || 1,
+          from: 0,
+        },
+      });
+    }
+
     const totalPages = limit ? Math.ceil(data.count / (limit || 1)) : 1;
 
     const result = {
@@ -947,23 +964,6 @@ const get_business_byCustomer = async (req, res) => {
         from: offset,
       },
     };
-
-    if (data.count === 0) {
-      return res.status(200).json({
-        success: false,
-        message: "Data Tidak Ditemukan",
-        data: null,
-        pages: {
-          total: 0,
-          per_page: limit || 0,
-          next_page: null,
-          to: 0,
-          last_page: 0,
-          current_page: page || 1,
-          from: 0,
-        },
-      });
-    }
 
     const currentUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
     const excludePagesUrl = "http://localhost:9900/api/v1/business/get_all";

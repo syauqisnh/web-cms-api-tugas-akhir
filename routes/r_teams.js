@@ -19,6 +19,6 @@ router.get('/teams/get_all',authenticate, get_all_teams);
 router.get('/teams/get_uniqe',authenticate, get_uniqe_teams);
 router.get('/teams/get_count',authenticate, get_count_teams);
 router.get('/teams/get_all_customer/', get_all_byScope);
-router.get('/teams/:team_uuid',authenticate, get_detail_teams);
+router.get('/teams/:team_uuid', get_detail_teams);
 
 module.exports = router;
