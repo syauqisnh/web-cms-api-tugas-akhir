@@ -10,6 +10,7 @@ const {
     get_unique_scope,
     get_count_scope,
     get_scope_byBusiness,
+    get_all_byBusiness,
 } = require('../controllers/c_scope')
 
 router.post('/scope',authenticate, post_scope)
@@ -19,6 +20,7 @@ router.get('/scope/get_all', get_all_scope)
 router.get('/scope/get_unique',authenticate, get_unique_scope)
 router.get('/scope/get_count',authenticate, get_count_scope)
 router.get('/scope/get_all_customer', get_scope_byBusiness);
+router.get('/scope_business/:business_uuid', get_all_byBusiness);
 router.get('/scope/:scope_uuid',authenticate, get_detail_scope)
 
 module.exports = router;

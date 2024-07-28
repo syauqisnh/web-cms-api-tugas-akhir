@@ -10,25 +10,25 @@ const jwt = require("jsonwebtoken");
 
 const scopeSchema = Joi.object({
   scope_name: Joi.string().required().messages({
-    'string.empty': 'Name tidak boleh kosong',
+    "string.empty": "Name tidak boleh kosong",
   }),
   scope_desc: Joi.string().required().messages({
-    'string.empty': 'Deskripsi tidak boleh kosong',
+    "string.empty": "Deskripsi tidak boleh kosong",
   }),
   scope_business: Joi.string().required().messages({
-    'string.base': 'Bisnis tidak boleh kosong',
+    "string.base": "Bisnis tidak boleh kosong",
   }),
 });
 
 const updateScopeSchema = Joi.object({
   scope_name: Joi.string().required().messages({
-    'string.empty': 'Name tidak boleh kosong',
+    "string.empty": "Name tidak boleh kosong",
   }),
   scope_desc: Joi.string().required().messages({
-    'string.empty': 'Deskripsi tidak boleh kosong',
+    "string.empty": "Deskripsi tidak boleh kosong",
   }),
   scope_business: Joi.string().required().messages({
-    'string.base': 'Bisnis tidak boleh kosong',
+    "string.base": "Bisnis tidak boleh kosong",
   }),
 });
 
@@ -167,12 +167,15 @@ const put_scope = async (req, res) => {
       });
     }
 
-    if (value.scope_business && value.scope_business !== update_scope.scope_business) {
+    if (
+      value.scope_business &&
+      value.scope_business !== update_scope.scope_business
+    ) {
       const existingScope = await tbl_scopes.findOne({
         where: {
           scope_business: value.scope_business,
           scope_uuid: { [Op.ne]: scope_uuid },
-          scope_delete_at: null
+          scope_delete_at: null,
         },
       });
 
@@ -305,11 +308,15 @@ const get_all_scope = async (req, res) => {
       const keywordClause = {
         [Sequelize.Op.or]: [
           { scope_name: { [Sequelize.Op.like]: `%${keyword}%` } },
-          { '$scope_business_as.business_name$': { [Sequelize.Op.like]: `%${keyword}%` } }
-        ]
+          {
+            "$scope_business_as.business_name$": {
+              [Sequelize.Op.like]: `%${keyword}%`,
+            },
+          },
+        ],
       };
       offset = 0;
-    
+
       whereClause[Sequelize.Op.and] = whereClause[Sequelize.Op.and]
         ? [...whereClause[Sequelize.Op.and], keywordClause]
         : [keywordClause];
@@ -325,7 +332,7 @@ const get_all_scope = async (req, res) => {
           model: tbl_business,
           as: "scope_business_as",
           where: {
-            business_delete_at: null, 
+            business_delete_at: null,
           },
           attributes: [
             "business_uuid",
@@ -698,11 +705,15 @@ const get_scope_byBusiness = async (req, res) => {
       const keywordClause = {
         [Sequelize.Op.or]: [
           { scope_name: { [Sequelize.Op.like]: `%${keyword}%` } },
-          { '$scope_business_as.business_name$': { [Sequelize.Op.like]: `%${keyword}%` } }
-        ]
+          {
+            "$scope_business_as.business_name$": {
+              [Sequelize.Op.like]: `%${keyword}%`,
+            },
+          },
+        ],
       };
       offset = 0;
-    
+
       whereClause[Sequelize.Op.and] = whereClause[Sequelize.Op.and]
         ? [...whereClause[Sequelize.Op.and], keywordClause]
         : [keywordClause];
@@ -718,7 +729,7 @@ const get_scope_byBusiness = async (req, res) => {
           model: tbl_business,
           as: "scope_business_as",
           where: {
-            business_delete_at: null, 
+            business_delete_at: null,
           },
           attributes: [
             "business_uuid",
@@ -805,6 +816,72 @@ const get_scope_byBusiness = async (req, res) => {
   }
 };
 
+const get_all_byBusiness = async (req, res) => {
+  try {
+    const { business_uuid } = req.params;
+
+    const data = await tbl_scopes.findAll({
+      where: { scope_business: business_uuid, scope_delete_at: null },
+      attributes: ["scope_uuid", "scope_name", "scope_desc", "scope_business"],
+      include: [
+        {
+          model: tbl_business,
+          as: "scope_business_as",
+          where: {
+            business_delete_at: null,
+          },
+          attributes: [
+            "business_uuid",
+            "business_name",
+            "business_desc",
+            "business_province",
+            "business_regency",
+            "business_subdistrict",
+            "business_address",
+            "business_customer",
+          ],
+        },
+      ],
+    });
+
+    const result = {
+      success: true,
+      message: "Sukses mendapatkan data",
+      data: data.map((scope) => ({
+        scope_uuid: scope.scope_uuid,
+        scope_name: scope.scope_name,
+        scope_desc: scope.scope_desc,
+        scope_business: scope.scope_business_as
+          ? {
+              business_uuid: scope.scope_business_as.business_uuid,
+              business_name: scope.scope_business_as.business_name,
+              business_desc: scope.scope_business_as.business_desc,
+              business_province: scope.scope_business_as.business_province,
+              business_regency: scope.scope_business_as.business_regency,
+              business_subdistrict:
+                scope.scope_business_as.business_subdistrict,
+              business_address: scope.scope_business_as.business_address,
+              business_customer: scope.scope_business_as.business_customer,
+            }
+          : null,
+      })),
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Data berhasil ditemukan',
+      data: result
+    });
+  } catch (error) {
+    console.log(error, "Kesalahan Data");
+    res.status(500).json({
+      success: false,
+      message: "Kesalahan server internal",
+      data: null,
+    });
+  }
+};
+
 module.exports = {
   post_scope,
   put_scope,
@@ -814,4 +891,5 @@ module.exports = {
   get_unique_scope,
   get_count_scope,
   get_scope_byBusiness,
+  get_all_byBusiness,
 };

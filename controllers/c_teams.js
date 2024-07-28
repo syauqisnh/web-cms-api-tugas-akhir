@@ -1003,11 +1003,100 @@ const get_all_byScope = async (req, res) => {
   }
 }
 
+const get_all_byBusiness = async (req, res) => {
+  try {
+    const { business_uuid } = req.params;
+
+    const teams = await tbl_teams.findAll({
+      where: { team_business: business_uuid, team_delete_at: null },
+      attributes: [
+        "team_uuid",
+        "team_name",
+        "team_job_desc" // Jangan lupa tambahkan atribut yang dibutuhkan di sini
+      ],
+      include: [
+        {
+          model: tbl_business,
+          as: "team_business_as",
+          where: { business_delete_at: null },
+          attributes: [
+            "business_uuid",
+            "business_name",
+            "business_desc",
+            "business_province",
+            "business_regency",
+            "business_subdistrict",
+            "business_address",
+            "business_customer",
+          ],
+        },
+        {
+          model: tbl_scopes,
+          as: "team_scope_as",
+          attributes: [
+            "scope_uuid",
+            "scope_name",
+            "scope_desc",
+            "scope_business",
+          ],
+        },
+        {
+          model: tbl_media,
+          as: "team_media_as",
+          attributes: ["media_uuid", "media_name", "media_url", "media_hash_name"],
+        },
+      ],
+    });
+
+    const formattedData = teams.map((team) => ({
+      team_uuid: team.team_uuid,
+      team_name: team.team_name,
+      team_job_desc: team.team_job_desc,
+      team_business: {
+        business_uuid: team.team_business_as.business_uuid,
+        business_name: team.team_business_as.business_name,
+        business_desc: team.team_business_as.business_desc,
+        business_province: team.team_business_as.business_province,
+        business_regency: team.team_business_as.business_regency,
+        business_subdistrict: team.team_business_as.business_subdistrict,
+        business_address: team.team_business_as.business_address,
+        business_customer: team.team_business_as.business_customer,
+      },
+      team_scope: {
+        scope_uuid: team.team_scope_as.scope_uuid,
+        scope_name: team.team_scope_as.scope_name,
+        scope_desc: team.team_scope_as.scope_desc,
+        scope_business: team.team_scope_as.scope_business,
+      },
+      team_media: {
+        media_uuid: team.team_media_as ? team.team_media_as.media_uuid : null,
+        media_name: team.team_media_as ? team.team_media_as.media_name : null,
+        media_url: team.team_media_as ? team.team_media_as.media_url : null,
+        media_hash_name: team.team_media_as ? team.team_media_as.media_hash_name : null,
+      },
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: "Data berhasil ditemukan",
+      data: formattedData,
+    });
+  } catch (error) {
+    console.error("Kesalahan Data:", error);
+    res.status(500).json({
+      success: false,
+      message: "Kesalahan server internal",
+      data: null,
+    });
+  }
+};
+
 module.exports = {
   post_teams,
   put_teams,
   delete_teams,
   get_detail_teams,
+  get_all_byBusiness,
   get_all_teams,
   get_uniqe_teams,
   get_count_teams,

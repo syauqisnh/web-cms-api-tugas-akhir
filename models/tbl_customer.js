@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
       tbl_customer.hasOne(models.tbl_media, {
         foreignKey: 'media_uuid_table',
         sourceKey: 'customer_uuid',
+        as: "customer_media_as"
       });
 
       tbl_customer.belongsTo(models.tbl_levels, {

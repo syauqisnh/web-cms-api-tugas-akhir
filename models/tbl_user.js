@@ -11,8 +11,8 @@ module.exports = (sequelize, DataTypes) => {
       tbl_user.hasOne(models.tbl_media, {
         foreignKey: 'media_uuid_table',
         sourceKey: 'user_uuid',
+        as: "user_media_as",
       });
-
       
       tbl_user.belongsTo(models.tbl_levels, {
         foreignKey: 'user_level',

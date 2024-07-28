@@ -983,6 +983,69 @@ const get_business_byCustomer = async (req, res) => {
   }
 };
 
+const get_business_uuid_customer = async (req, res) => {
+  try {
+    const { customer_uuid } = req.params;
+
+    const data = await tbl_business.findAll({
+      where: { business_customer: customer_uuid, business_delete_at: null },
+      attributes: [
+        'business_uuid', 'business_name', 'business_desc', 'business_province', 'business_regency',
+        'business_subdistrict', 'business_address', 'business_notelp', 'business_email', 'business_link_wa'
+      ],
+      include: [
+        {
+          model: tbl_customer,
+          as: 'business_customer_as',
+          attributes: [
+            'customer_uuid', 'customer_full_name', 'customer_nohp', 'customer_email', 'customer_address'
+          ],
+        },
+        {
+          model: tbl_user,
+          as: 'business_user_as',
+          attributes: [
+            'user_uuid', 'user_full_name', 'user_nohp', 'user_email', 'user_address'
+          ],
+        },
+        {
+          model: tbl_media,
+          as: 'business_media_as',
+          attributes: [
+            'media_uuid', 'media_name', 'media_hash_name', 'media_url'
+          ],
+        },
+      ],
+    });
+
+    if (!data || data.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Data tidak tersedia',
+        data: null
+      });
+    }
+
+    const formattedData = data.map(item => ({
+      business_uuid: item.business_uuid,
+      business_name: item.business_name
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: 'Sukses mendapatkan data',
+      data: formattedData
+    });
+  } catch (error) {
+    console.log(error, 'Kesalahan Data');
+    res.status(500).json({
+      success: false,
+      message: 'Kesalahan server internal',
+      data: null
+    });
+  }
+}
+
 module.exports = {
   post_business,
   put_business,
@@ -991,5 +1054,6 @@ module.exports = {
   get_detail_business,
   get_uniqe_business,
   get_count_business,
+  get_business_uuid_customer,
   get_business_byCustomer,
 };

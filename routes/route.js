@@ -15,6 +15,9 @@ const r_tnc = require('./r_tnc');
 const r_galleries = require('./r_galleries');
 const r_payments = require("./r_payments");
 const r_payments_via = require("./r_payments_via");
+const r_scheduling = require("./r_scheduling");
+const r_practice_schedule = require("./r_practice_schedule");
+const r_layanan = require("./r_layanan");
 
 router.use("/api/v1", r_auth);
 router.use("/api/v1", r_levels);
@@ -32,5 +35,8 @@ router.use('/api/v1', r_tnc);
 router.use('/api/v1', r_galleries);
 router.use("/api/v1", r_payments);
 router.use("/api/v1", r_payments_via);
+router.use("/api/v1", r_scheduling);
+router.use("/api/v1", r_practice_schedule);
+router.use("/api/v1", r_layanan);
 
 module.exports = router;

@@ -802,6 +802,85 @@ const get_galleries_byGalleries = async (req, res) => {
   }
 };
 
+const get_all_byBusiness = async (req, res) => {
+  try {
+    const { business_uuid } = req.params;
+
+    const teams = await tbl_galleries.findAll({
+      where: { gallery_business: business_uuid, gallery_delete_at: null },
+      attributes: [
+        "gallery_uuid",
+        "gallery_name",
+        "gallery_desc",
+        "gallery_business",
+        "gallery_media"
+      ],
+      include: [
+        {
+          model: tbl_business,
+          as: "gallery_business_as",
+          where: {
+            business_delete_at: null, 
+          },
+          attributes: [
+            "business_uuid",
+            "business_name",
+            "business_desc",
+            "business_province",
+            "business_regency",
+            "business_subdistrict",
+            "business_address",
+            "business_customer",
+          ],
+        },
+        {
+          model: tbl_media,
+          as: "gallery_media_as",
+          attributes: ["media_uuid", "media_name", "media_hash_name",  "media_url"],
+        },
+      ],
+    });
+
+    const formattedData = teams.map((gallery) => ({
+      gallery_uuid: gallery.gallery_uuid,
+      gallery_name: gallery.gallery_name,
+      gallery_desc: gallery.gallery_desc,
+      gallery_business: gallery.gallery_business_as
+        ? {
+            business_uuid: gallery.gallery_business_as.business_uuid,
+            business_name: gallery.gallery_business_as.business_name,
+            business_desc: gallery.gallery_business_as.business_desc,
+            business_province: gallery.gallery_business_as.business_province,
+            business_regency: gallery.gallery_business_as.business_regency,
+            business_subdistrict:
+              gallery.gallery_business_as.business_subdistrict,
+            business_address: gallery.gallery_business_as.business_address,
+            business_customer: gallery.gallery_business_as.business_customer,
+          }
+        : null,
+      gallery_media: gallery.gallery_media_as.map(media => ({
+        media_uuid: media.media_uuid,
+        media_name: media.media_name,
+        media_hash_name: media.media_hash_name,
+        media_url: media.media_url,
+      })),
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: "Sukses mendapatkan data",
+      data: formattedData,
+    });
+  } catch (error) {
+    console.error("Kesalahan Data:", error);
+    res.status(500).json({
+      success: false,
+      message: "Kesalahan server internal",
+      data: null,
+    });
+  }
+};
+
 
 module.exports = {
   post_galleries,
@@ -811,5 +890,6 @@ module.exports = {
   get_detail_galleries,
   get_unique_galleries,
   get_count_galleries,
+  get_all_byBusiness,
   get_galleries_byGalleries
 };

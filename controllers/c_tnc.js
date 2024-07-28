@@ -1,5 +1,6 @@
 const db = require("../models");
 const tbl_tnc = db.tbl_tnc;
+const tbl_media = db.tbl_media;
 const tbl_business = db.tbl_business;
 const tbl_price_list = db.tbl_price_list;
 const tbl_customer = db.tbl_customer;
@@ -890,11 +891,118 @@ const get_tnc_byPriceList = async (req, res) => {
   }
 };
 
+const get_all_byBusiness = async (req, res) => {
+  try {
+    const { business_uuid } = req.params;
+
+    const teams = await tbl_tnc.findAll({
+      where: { tnc_business: business_uuid, tnc_delete_at: null },
+      attributes: [
+        "tnc_uuid",
+        "tnc_uuid_table",
+        "tnc_name",
+        "tnc_business"
+      ],
+      include: [
+        {
+          model: tbl_price_list,
+          as: "tnc_price_as",
+          attributes: [
+            "price_list_uuid",
+            "price_list_name",
+            "price_list_price",
+            "price_list_desc",
+            "price_list_status",
+            "price_list_order",
+            "price_list_business",
+            "price_list_media"
+          ],
+          include: [
+            {
+              model: tbl_media,
+              as: "price_media_as",
+              attributes: [
+                "media_uuid", 
+                "media_name", 
+                "media_url", 
+                "media_hash_name"
+              ],
+            },
+          ],
+        },
+        {
+          model: tbl_business,
+          as: "tnc_business_as",
+          where: {
+            business_delete_at: null,
+          },
+          attributes: [
+            "business_uuid",
+            "business_name",
+            "business_desc",
+            "business_province",
+            "business_regency",
+            "business_subdistrict",
+            "business_address",
+            "business_customer",
+          ],
+        },
+      ],
+    });
+
+    const formattedData = teams.map((tnc) => ({
+      tnc_uuid: tnc.tnc_uuid,
+      tnc_uuid_table: {
+        price_list_uuid: tnc.tnc_price_as.price_list_uuid,
+        price_list_name: tnc.tnc_price_as.price_list_name,
+        price_list_price: tnc.tnc_price_as.price_list_price,
+        price_list_desc: tnc.tnc_price_as.price_list_desc,
+        price_list_status: tnc.tnc_price_as.price_list_status,
+        price_list_order: tnc.tnc_price_as.price_list_order,
+        price_list_business: tnc.tnc_price_as.price_list_business,
+        price_list_media: tnc.tnc_price_as.price_media_as ? {
+          media_uuid: tnc.tnc_price_as.price_media_as.media_uuid,
+          media_name: tnc.tnc_price_as.price_media_as.media_name,
+          media_url: tnc.tnc_price_as.price_media_as.media_url,
+          media_hash_name: tnc.tnc_price_as.price_media_as.media_hash_name,
+        } : null,
+      },
+      tnc_name: tnc.tnc_name,
+      tnc_business: {
+        business_uuid: tnc.tnc_business_as.business_uuid,
+        business_name: tnc.tnc_business_as.business_name,
+        business_desc: tnc.tnc_business_as.business_desc,
+        business_province: tnc.tnc_business_as.business_province,
+        business_regency: tnc.tnc_business_as.business_regency,
+        business_subdistrict: tnc.tnc_business_as.business_subdistrict,
+        business_address: tnc.tnc_business_as.business_address,
+        business_customer: tnc.tnc_business_as.business_customer,
+      },
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: "Sukses mendapatkan data",
+      data: formattedData,
+    });
+  } catch (error) {
+    console.error("Kesalahan Data:", error);
+    res.status(500).json({
+      success: false,
+      message: "Kesalahan server internal",
+      data: null,
+    });
+  }
+}
+
+
+
 module.exports = {
   post_tnc,
   put_tnc,
   delete_tnc,
   get_all_tnc,
+  get_all_byBusiness,
   get_detail_tnc,
   get_uniqe_tnc,
   get_count_tnc,

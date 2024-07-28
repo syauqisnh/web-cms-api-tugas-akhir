@@ -31,12 +31,17 @@
     "fs": "^0.0.1-security",
     "joi": "^17.11.0",
     "jsonwebtoken": "^9.0.2",
+    "luxon": "^3.4.4",
+    "moment-timezone": "^0.5.45",
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.6.1",
     "nodemon": "^3.0.1",
     "path": "^0.12.7",
     "sequelize": "^6.33.0",
-    "sweetalert2": "^11.10.5"
+    "sweetalert2": "^11.10.5",
+    "swiper": "^8.4.7",
+    "uuidv4": "^6.2.13",
+    "vue-awesome-swiper": "^5.0.1"
   },
   "devDependencies": {
     "@types/aos": "^3.0.7",

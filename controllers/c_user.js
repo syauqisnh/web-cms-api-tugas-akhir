@@ -11,27 +11,27 @@ const Joi = require("joi");
 
 const userSchema = Joi.object({
   user_username: Joi.string().required().messages({
-    'string.empty': 'Username tidak boleh kosong',
+    "string.empty": "Username tidak boleh kosong",
   }),
   user_full_name: Joi.string().required().messages({
-    'string.empty': 'Nama lengkap tidak boleh kosong',
+    "string.empty": "Nama lengkap tidak boleh kosong",
   }),
   user_nohp: Joi.string().allow("").min(10).max(14),
   user_address: Joi.string().allow(""),
   user_email: Joi.string().email().required().messages({
-    'string.empty': 'Email tidak boleh kosong',
+    "string.empty": "Email tidak boleh kosong",
   }),
   user_password: Joi.string().min(8).required().messages({
-    'string.empty': 'Password tidak boleh kosong',
+    "string.empty": "Password tidak boleh kosong",
   }),
 });
 
 const updateuserSchema = Joi.object({
   user_username: Joi.string().required().messages({
-    'string.empty': 'Username tidak boleh kosong',
+    "string.empty": "Username tidak boleh kosong",
   }),
   user_full_name: Joi.string().required().messages({
-    'string.empty': 'Nama lengkap tidak boleh kosong',
+    "string.empty": "Nama lengkap tidak boleh kosong",
   }),
   user_nohp: Joi.string().allow("").min(10).max(14),
   user_address: Joi.string().allow(""),
@@ -116,14 +116,14 @@ const post_user = async (req, res) => {
     const hashedPassword = await bcrypt.hash(user_password, saltRounds);
 
     const level = await tbl_levels.findOne({
-      where: { level_name: "administrator" }
+      where: { level_name: "administrator" },
     });
 
     if (!level) {
       return res.status(404).json({
-          success: false,
-          message: "Level customer tidak ditemukan",
-          data: null
+        success: false,
+        message: "Level customer tidak ditemukan",
+        data: null,
       });
     }
 
@@ -137,26 +137,13 @@ const post_user = async (req, res) => {
       user_email: user_email,
       user_address: user_address,
       user_password: hashedPassword,
-      user_level: customerLevelUuid
+      user_level: customerLevelUuid,
     });
 
     if (!create_user) {
       return res.status(404).json({
         success: false,
         message: "Gagal menambahkan data user",
-        data: null,
-      });
-    }
-
-    const create_media = await tbl_media.create({
-      media_uuid_table: create_user.user_uuid,
-      media_table: "user",
-    });
-
-    if (!create_media) {
-      return res.status(404).json({
-        success: false,
-        message: "Gagal menambahkan data media",
         data: null,
       });
     }
@@ -332,6 +319,23 @@ const get_detail_user = async (req, res) => {
         user_uuid,
         user_delete_at: null,
       },
+      include: [
+        {
+          model: tbl_levels,
+          as: "user_level_as",
+          attributes: ["level_uuid", "level_name"],
+        },
+        {
+          model: tbl_media,
+          as: "user_media_as",
+          attributes: [
+            "media_uuid",
+            "media_name",
+            "media_hash_name",
+            "media_url",
+          ],
+        },
+      ],
     });
 
     if (!detail_user) {
@@ -351,6 +355,20 @@ const get_detail_user = async (req, res) => {
         user_nohp: detail_user.user_nohp,
         user_address: detail_user.user_address,
         user_email: detail_user.user_email,
+        user_level: detail_user.user_level_as
+        ? {
+            level_uuid: detail_user.user_level_as.level_uuid,
+            level_name: detail_user.user_level_as.level_name,
+          }
+        : null,
+      user_media: detail_user.user_media_as
+        ? {
+            media_uuid: detail_user.user_media_as.media_uuid,
+            media_name: detail_user.user_media_as.media_name,
+            media_url: detail_user.user_media_as.media_url,
+            media_hash_name: detail_user.user_media_as.media_hash_name,
+          }
+        : null,
       },
     };
 
@@ -431,11 +449,21 @@ const get_all_user = async (req, res) => {
       offset: offset ? parseInt(offset) : null,
       include: [
         {
-            model: tbl_levels,
-            as: 'user_level_as',
-            attributes: ['level_uuid', 'level_name']
-        }
-    ]
+          model: tbl_levels,
+          as: "user_level_as",
+          attributes: ["level_uuid", "level_name"],
+        },
+        {
+          model: tbl_media,
+          as: "user_media_as",
+          attributes: [
+            "media_uuid",
+            "media_name",
+            "media_hash_name",
+            "media_url",
+          ],
+        },
+      ],
     });
 
     const totalPages = limit ? Math.ceil(data.count / (limit || 1)) : 1;
@@ -451,10 +479,19 @@ const get_all_user = async (req, res) => {
         user_address: user.user_address,
         user_email: user.user_email,
         user_level: user.user_level_as
-        ? {
-            level_uuid: user.user_level_as.level_uuid,
-            level_name: user.user_level_as.level_name
-        } : null,
+          ? {
+              level_uuid: user.user_level_as.level_uuid,
+              level_name: user.user_level_as.level_name,
+            }
+          : null,
+        user_media: user.user_media_as
+          ? {
+              media_uuid: user.user_media_as.media_uuid,
+              media_name: user.user_media_as.media_name,
+              media_url: user.user_media_as.media_url,
+              media_hash_name: user.user_media_as.media_hash_name,
+            }
+          : null,
       })),
       pages: {
         total: data.count,

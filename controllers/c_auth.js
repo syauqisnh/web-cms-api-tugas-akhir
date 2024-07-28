@@ -89,6 +89,7 @@ const Me = async (req, res) =>{
   let uuid
   let name
   let level
+  let fullName
   
   const token = req.cookies.token;
   if (!token) {
@@ -100,14 +101,14 @@ const Me = async (req, res) =>{
       uuid = decoded.uuid;
 
       const user_customer = await tbl_customer.findOne({
-          attributes:['customer_uuid', 'customer_username'],
+          attributes:['customer_uuid', 'customer_username', 'customer_full_name'],
           where: {
               customer_uuid: uuid
           }
       });
       
       const user_admin = await tbl_user.findOne({
-          attributes:['user_uuid', 'user_username'],
+          attributes:['user_uuid', 'user_username', 'user_full_name'],
           where: {
               user_uuid: uuid
           }
@@ -118,12 +119,14 @@ const Me = async (req, res) =>{
       } else if (user_admin) {
           name = user_admin['user_username'];
           level = 'administrator';
+          fullName = user_admin['user_full_name'];
       } else if (user_customer) {
           name = user_customer['customer_username'];
           level = 'customer';
+          fullName = user_customer['customer_full_name'];
       }
 
-      res.status(200).json({ uuid, name, level });
+      res.status(200).json({ uuid, name, level, fullName });
   } catch (error) {
       console.error(error);
       res.clearCookie('token');
@@ -132,108 +135,95 @@ const Me = async (req, res) =>{
 }
 
 const registrasi_customer = async (req, res) => {
-  try {
-      const { error, value } = customerSchema.validate(req.body);
-      if (error) {
-          return res.status(400).json({
-              success: false,
-              message: error.details[0].message,
-              data: null
-          });
-      }
-
-      const {
-          customer_username,
-          customer_full_name,
-          customer_email,
-          customer_password,
-      } = value;
-
-      const existingCustomer = await tbl_customer.findOne({
-          where: { 
-              [Op.and]: [
-                  { customer_email: customer_email },
-                  { customer_delete_at: null }
-                  
-              ]
-          }
-        });
-    
-        if (existingCustomer) {
-          return res.status(400).json({
-            success: false,
-            message: "Email sudah digunakan, silakan gunakan email lain.",
-            data: existingCustomer,
-          });
+    try {
+        const { error, value } = customerSchema.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.details[0].message,
+                data: null
+            });
         }
-  
-      const customer_uuid = uuidv4();
-      
-      const hashedPassword = await bcrypt.hash(customer_password, saltRounds);
 
-      const level = await tbl_levels.findOne({
-        where: { level_name: "customer" }
-    });
+        const {
+            customer_username,
+            customer_full_name,
+            customer_email,
+            customer_password,
+        } = value;
 
-    if (!level) {
-        return res.status(404).json({
+        const existingCustomer = await tbl_customer.findOne({
+            where: {
+                [Op.and]: [
+                    { customer_email: customer_email },
+                    { customer_delete_at: null }
+                ]
+            }
+        });
+
+        if (existingCustomer) {
+            return res.status(400).json({
+                success: false,
+                message: "Email sudah digunakan, silakan gunakan email lain.",
+                data: existingCustomer,
+            });
+        }
+
+        const customer_uuid = uuidv4();
+
+        const hashedPassword = await bcrypt.hash(customer_password, saltRounds);
+
+        const level = await tbl_levels.findOne({
+            where: { level_name: "customer" }
+        });
+
+        if (!level) {
+            return res.status(404).json({
+                success: false,
+                message: "Level customer tidak ditemukan",
+                data: null
+            });
+        }
+
+        const customerLevelUuid = level.level_uuid;
+
+        const create_customer = await tbl_customer.create({
+            customer_uuid: customer_uuid,
+            customer_username: customer_username,
+            customer_full_name: customer_full_name,
+            customer_email: customer_email,
+            customer_password: hashedPassword,
+            customer_level: customerLevelUuid,
+        });
+
+        if (!create_customer) {
+            return res.status(404).json({
+                success: false,
+                message: 'Gagal menambahkan data pelanggan',
+                data: null
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Registrasi Berhasil',
+            data: {
+                customer_uuid: create_customer.customer_uuid,
+                customer_username: create_customer.customer_username,
+                customer_address: create_customer.customer_address,
+                customer_email: create_customer.customer_email
+            }
+        });
+    } catch (error) {
+        console.log(error, 'Data Error');
+        return res.status(500).json({
             success: false,
-            message: "Level customer tidak ditemukan",
+            message: 'Internal Server Error',
             data: null
         });
     }
-
-      const customerLevelUuid = level.level_uuid;
-
-      const create_customer = await tbl_customer.create({
-          customer_uuid: customer_uuid,
-          customer_username: customer_username,
-          customer_full_name: customer_full_name,
-          customer_email: customer_email,
-          customer_password: hashedPassword,
-          customer_level: customerLevelUuid,
-      });
-  
-      if (!create_customer) {
-          return res.status(404).json({
-              success: false,
-              message: 'Gagal menambahkan data pelanggan',
-              data: null
-          });
-      }
-
-      const create_media = await tbl_media.create({
-          media_uuid_table: create_customer.customer_uuid,
-          media_table: 'customer'
-      });
-
-      if (!create_media) {
-          return res.status(404).json({
-              success: false,
-              message: 'Anda Gagal melakukan registrasi',
-              data: null
-          });
-      }
-
-      res.status(200).json({
-          success: true,
-          message: 'Registrasi Berhasil',
-          data: {
-              customer_uuid: create_customer.customer_uuid,
-              customer_username: create_customer.customer_username,
-              customer_address: create_customer.customer_address,
-              customer_email: create_customer.customer_email
-          }
-      });
-  } catch (error) {
-      console.log(error, 'Data Error');
-      return res.status(500).json({
-          success: false,
-          message: 'Internal Server Error',
-          data: null
-      });
-  }
 }
+
 
 
 const logOut = (req, res) => {

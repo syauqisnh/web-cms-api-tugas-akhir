@@ -81,7 +81,7 @@ const upload = multer({
 });
 
 const uploaded = multer({
-  storage: storageImages, 
+  storage: storageImages,
   fileFilter: fileFilter,
   limits: { fileSize: 300 * 1024 * 1024 },
 });
@@ -556,44 +556,41 @@ const post_profile_customer = async (req, res) => {
     }
 
     try {
-      const { value } = uuidSchema.validate(req.params)
-      const { table_uuid } = value
+      const { value } = uuidSchema.validate(req.params);
+      const { table_uuid } = value;
 
-      const uploadedFiles = req.files
-      for (const file of uploadedFiles) {
-        if (!file.mimetype.includes("image")) {
-          return res.status(400).send("Tipe file tidak didukung.");
-        }
-      }
-
+      // Cek apakah sudah ada media gambar terkait dengan tabel UUID
       const existingMedia = await tbl_media.findOne({
         where: {
           media_uuid_table: table_uuid,
-          media_category: 'img'
+          media_category: 'img' // Hanya cek untuk kategori gambar
         }
-      })
+      });
 
       if (existingMedia) {
-        const fileNameToDelete = existingMedia.media_hash_name
+        // Mendapatkan nama file yang akan dihapus
+        const fileNameToDelete = existingMedia.media_hash_name;
 
+        // Hapus data media yang sudah ada dari database
         await tbl_media.destroy({
           where: {
             media_uuid_table: table_uuid,
             media_category: 'img'
           }
-        })
+        });
 
-        const filePath = `./uploads/img/${fileNameToDelete}`
-
-        fs.unlink(filePath, (error) => {
-          if (error) {
-            console.error('Menghapus File:', error)
+        // Hapus file dari sistem file
+        const filePath = `./uploads/img/${fileNameToDelete}`; // Ganti dengan path sesuai dengan struktur penyimpanan Anda
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            console.error("Error deleting file:", err);
           } else {
-            console.log('Sukses Menghapus File Sebelumnya')
+            console.log("File deleted successfully");
           }
-        })
+        });
       }
 
+      const uploadedFiles = req.files;
       const uploadedMedia = [];
 
       for (const file of uploadedFiles) {
@@ -601,7 +598,14 @@ const post_profile_customer = async (req, res) => {
         const extensi = path.extname(file.originalname);
         const size = file.size;
 
-        const subdir = "img";
+        let subdir = "";
+        if (file.mimetype.includes("image")) {
+          subdir = "img";
+        }
+
+        if (!subdir) {
+          return res.status(400).send("Tipe file tidak didukung.");
+        }
 
         const url = `${req.protocol}://${req.get("host")}/uploads/${subdir}/${file.filename}`;
 
@@ -619,20 +623,20 @@ const post_profile_customer = async (req, res) => {
             originalname: file.originalname,
             mimetype: file.mimetype,
           }),
-        })
+        });
 
-        uploadedMedia.push(newMedia)
+        uploadedMedia.push(newMedia);
       }
 
       res.status(200).json({
-        success: true,
-        message: "Sukses Upload File",
-        data: uploadedMedia
-      })
-    } catch (error) {
-      res.status(500).json({ message: error.message });
+        status: true,
+        message: "File berhasil diupload",
+        data: uploadedMedia,
+      });
+    } catch (dbError) {
+      res.status(500).json({ message: dbError.message });
     }
-  })
+  });
 }
 
 const post_upload_media_any = async (req, res) => {
@@ -640,7 +644,7 @@ const post_upload_media_any = async (req, res) => {
     if (error) {
       return res.status(500).json({ message: error.message });
     }
-
+w
     if (!req.files || req.files.length === 0) {
       return res.status(400).send("File tidak ditemukan.");
     }
@@ -793,7 +797,6 @@ const get_all_media = async (req, res) => {
           [Sequelize.Op.or]: filterNames.map((name) => ({
             [Sequelize.Op.like]: `%${name.trim()}%`,
           })),
-          [Sequelize.Op.not]: null,
         };
       } else {
         console.log("Empty filter.media_table");
@@ -803,6 +806,12 @@ const get_all_media = async (req, res) => {
         });
       }
     }
+    
+    // Tambahkan kondisi tambahan untuk mengecualikan data media yang kosong
+    whereClause.media_name = {
+      [Sequelize.Op.ne]: null
+    };
+
     if (keyword) {
       const keywordClause = {
         [Sequelize.Op.like]: `%${keyword}%`,
@@ -904,6 +913,10 @@ const get_detail_media = async (req, res) => {
       media_delete_at: null,
     };
 
+    whereClause.media_name = {
+      [Sequelize.Op.ne]: null
+    };
+
     if (filter.media_table) {
       const filterNames = Array.isArray(filter.media_table)
         ? filter.media_table
@@ -914,7 +927,6 @@ const get_detail_media = async (req, res) => {
           [Sequelize.Op.or]: filterNames.map((name) => ({
             [Sequelize.Op.like]: `%${name.trim()}%`,
           })),
-          [Sequelize.Op.not]: null,
         };
       } else {
         console.log("Empty filter.media_table");
@@ -1133,11 +1145,11 @@ module.exports = {
   post_upload_media,
   post_profile_teams,
   post_profile_user,
+  post_profile_customer,
   post_media_price,
   post_media_business,
   delete_media,
   post_upload_media_any,
   get_detail_media,
   get_detail_mediabymediauuid,
-  post_profile_customer,
 };
