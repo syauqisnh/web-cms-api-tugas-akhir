@@ -33,6 +33,9 @@ module.exports = {
       user_level: {
         type: Sequelize.STRING
       },
+      user_media: {
+        type: Sequelize.STRING
+      },
       user_create_at: {
         allowNull: false,
         type: Sequelize.DATE,

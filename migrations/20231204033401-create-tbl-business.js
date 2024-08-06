@@ -39,6 +39,9 @@ module.exports = {
       business_link_wa: {
         type: Sequelize.STRING
       },
+      business_media: {
+        type: Sequelize.STRING
+      },
       business_customer: {
         type: Sequelize.STRING
       },
