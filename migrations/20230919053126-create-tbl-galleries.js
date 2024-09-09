@@ -21,6 +21,9 @@ module.exports = {
       gallery_business: {
         type: Sequelize.STRING
       },
+      gallery_media: {
+        type: Sequelize.STRING
+      },
       gallery_create_at: {
         allowNull: false,
         type: Sequelize.DATE,

@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      
     }
   }
   tbl_media.init(
@@ -40,7 +40,9 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "tbl_media",
+      tableName: "tbl_media",
       timestamps: false,
+      paranoid: true,
     }
   );
   return tbl_media;

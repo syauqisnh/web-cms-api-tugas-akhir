@@ -8,7 +8,17 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      tbl_galleries.hasMany(models.tbl_media, {
+        foreignKey: 'media_uuid_table',
+        sourceKey: 'gallery_uuid',
+        as: "gallery_media_as",
+      });
+
+      tbl_galleries.belongsTo(models.tbl_business, {
+        foreignKey: 'gallery_business',
+        targetKey: 'business_uuid', 
+        as: "gallery_business_as",
+      });
     }
   }
   tbl_galleries.init(
@@ -23,6 +33,7 @@ module.exports = (sequelize, DataTypes) => {
       gallery_name: DataTypes.STRING,
       gallery_desc: DataTypes.STRING,
       gallery_business: DataTypes.STRING,
+      gallery_media: DataTypes.STRING,
       gallery_create_at: DataTypes.DATE,
       gallery_update_at: DataTypes.DATE,
       gallery_delete_at: DataTypes.DATE,
@@ -33,6 +44,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "tbl_galleries",
+      tableName: "tbl_galleries",
       timestamps: false,
     }
   );

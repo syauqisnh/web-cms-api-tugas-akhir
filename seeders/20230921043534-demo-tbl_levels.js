@@ -38,6 +38,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    return queryInterface.bulkDelete('tbl_levels', null, {});
-  },
+    return queryInterface.bulkDelete('tbl_levels', null, {});
+  },
 };

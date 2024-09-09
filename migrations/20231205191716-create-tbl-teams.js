@@ -24,6 +24,9 @@ module.exports = {
       team_business: {
         type: Sequelize.STRING,
       },
+      team_media: {
+        type: Sequelize.STRING,
+      },
       team_create_at: {
         allowNull: false,
         type: Sequelize.DATE,

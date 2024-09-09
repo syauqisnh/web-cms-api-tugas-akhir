@@ -8,7 +8,17 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      tbl_customer.hasOne(models.tbl_media, {
+        foreignKey: 'media_uuid_table',
+        sourceKey: 'customer_uuid',
+        as: "customer_media_as"
+      });
+
+      tbl_customer.belongsTo(models.tbl_levels, {
+        foreignKey: 'customer_level',
+        targetKey: 'level_uuid', 
+        as: "customer_level_as",
+      });
     }
   }
   tbl_customer.init(
@@ -38,6 +48,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "tbl_customer",
+      tableName: "tbl_customer",
       timestamps: false,
     }
   );

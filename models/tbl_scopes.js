@@ -8,7 +8,12 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      tbl_scopes.belongsTo(models.tbl_business, {
+        foreignKey: 'scope_business',
+        targetKey: 'business_uuid', 
+        as: "scope_business_as",
+      });
+
     }
   }
   tbl_scopes.init(
@@ -33,6 +38,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "tbl_scopes",
+      tableName: "tbl_scopes",
       timestamps: false,
     }
   );

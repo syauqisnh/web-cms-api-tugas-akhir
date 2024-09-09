@@ -2,13 +2,29 @@
 const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class tbl_business extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
-      // define association here
+      tbl_business.hasOne(models.tbl_media, {
+        foreignKey: 'media_uuid_table',
+        sourceKey: 'business_uuid',
+      });
+
+      tbl_business.belongsTo(models.tbl_customer, {
+        foreignKey: "business_customer",
+        targetKey: "customer_uuid",
+        as: "business_customer_as",
+      });
+
+      tbl_business.belongsTo(models.tbl_user, {
+        foreignKey: "business_customer",
+        targetKey: "user_uuid",
+        as: "business_user_as",
+      });
+
+      tbl_business.hasOne(models.tbl_media, {
+        foreignKey: 'media_uuid_table',
+        sourceKey: 'business_uuid',
+        as: "business_media_as",
+      });
     }
   }
   tbl_business.init(
@@ -26,11 +42,11 @@ module.exports = (sequelize, DataTypes) => {
       business_regency: DataTypes.STRING,
       business_subdistrict: DataTypes.STRING,
       business_address: DataTypes.STRING,
-      business_media: DataTypes.STRING,
       business_notelp: DataTypes.STRING,
       business_email: DataTypes.STRING,
       business_link_wa: DataTypes.STRING,
       business_customer: DataTypes.STRING,
+      business_media: DataTypes.STRING,
       business_create_at: DataTypes.DATE,
       business_update_at: DataTypes.DATE,
       business_delete_at: DataTypes.DATE,
@@ -41,6 +57,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "tbl_business",
+      tableName: "tbl_business",
       timestamps: false,
     }
   );

@@ -2,64 +2,67 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('tbl_schedules', {
-      schedule_id: {
+    await queryInterface.createTable('tbl_user', {
+      user_id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
-        type: Sequelize.INTEGER(50),
+        type: Sequelize.INTEGER(50)
       },
-      schedule_uuid: {
+      user_uuid: {
         type: Sequelize.STRING
       },
-      schedule_title: {
+      user_username: {
         type: Sequelize.STRING
       },
-      schedule_status: {
-        type: Sequelize.ENUM('Y', 'N'),
-        defaultValue: 'N'
-      },
-      schedule_start: {
-        allowNull: true,
-        type: Sequelize.DATE
-      },
-      schedule_finish: {
-        allowNull: true,
-        type: Sequelize.DATE
-      },
-      schedule_address: {
+      user_full_name: {
         type: Sequelize.STRING
       },
-      schedule_business: {
+      user_nohp: {
         type: Sequelize.STRING
       },
-      schedule_create_at: {
+      user_email: {
+        type: Sequelize.STRING
+      },
+      user_address: {
+        type: Sequelize.STRING
+      },
+      user_password: {
+        type: Sequelize.STRING
+      },
+      user_level: {
+        type: Sequelize.STRING
+      },
+      user_media: {
+        type: Sequelize.STRING
+      },
+      user_create_at: {
         allowNull: false,
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal("CURRENT_TIMESTAMP")
       },
-      schedule_update_at: {
+      user_update_at: {
         allowNull: true,
         type: Sequelize.DATE
       },
-      schedule_delete_at: {
+      user_delete_at: {
         allowNull: true,
         type: Sequelize.DATE
       },
-      schedule_create_by: {
+      user_create_by: {
         type: Sequelize.STRING
       },
-      schedule_update_by: {
+      user_update_by: {
         type: Sequelize.STRING
       },
-      schedule_delete_by: {
+      user_delete_by: {
         type: Sequelize.STRING
-      },
+      }
     }, {
       timestamps: false,
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('tbl_schedules');
+    await queryInterface.dropTable('tbl_user');
   }
 };

@@ -8,7 +8,17 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      tbl_price_list.belongsTo(models.tbl_business, {
+        foreignKey: 'price_list_business',
+        targetKey: 'business_uuid', 
+        as: "price_business_as",
+      });
+
+      tbl_price_list.hasOne(models.tbl_media, {
+        foreignKey: 'media_uuid_table',
+        sourceKey: 'price_list_uuid',
+        as: "price_media_as",
+      });
     }
   }
   tbl_price_list.init(
@@ -30,16 +40,17 @@ module.exports = (sequelize, DataTypes) => {
       price_list_order: DataTypes.STRING,
       price_list_business: DataTypes.STRING,
       price_list_media: DataTypes.STRING,
-      paket_harga_create_at: DataTypes.DATE,
-      paket_harga_update_at: DataTypes.DATE,
-      paket_harga_delete_at: DataTypes.DATE,
-      paket_harga_create_by: DataTypes.STRING,
-      paket_harga_update_by: DataTypes.STRING,
-      paket_harga_delete_by: DataTypes.STRING,
+      price_list_create_at: DataTypes.DATE,
+      price_list_update_at: DataTypes.DATE,
+      price_list_delete_at: DataTypes.DATE,
+      price_list_create_by: DataTypes.STRING,
+      price_list_update_by: DataTypes.STRING,
+      price_list_delete_by: DataTypes.STRING,
     },
     {
       sequelize,
       modelName: "tbl_price_list",
+      tableName: "tbl_price_list",
       timestamps: false,
     }
   );

@@ -7,8 +7,26 @@ module.exports = (sequelize, DataTypes) => {
      * This method is not a part of Sequelize lifecycle.
      * The `models/index` file will call this method automatically.
      */
+    // tbl_access model
+    // tbl_access model
     static associate(models) {
-      // define association here
+      tbl_access.belongsTo(models.tbl_modules, {
+        foreignKey: "access_modul",
+        targetKey: "module_uuid", // sesuaikan dengan nama kolom yang sesuai di tbl_modules
+        as: "access_modul_as",
+      });
+
+      tbl_access.belongsTo(models.tbl_permissions, {
+        foreignKey: "access_permission",
+        targetKey: "permission_uuid", // sesuaikan dengan nama kolom yang sesuai di tbl_permissions
+        as: "access_permission_as",
+      });
+
+      tbl_access.belongsTo(models.tbl_levels, {
+        foreignKey: "access_level",
+        targetKey: "level_uuid", // sesuaikan dengan nama kolom yang sesuai di tbl_levels
+        as: "access_level_as",
+      });
     }
   }
   tbl_access.init(
@@ -33,7 +51,9 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "tbl_access",
+      tableName: "tbl_access",
       timestamps: false,
+      paranoid: true,
     }
   );
   return tbl_access;
